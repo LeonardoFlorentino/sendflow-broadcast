@@ -4,5 +4,5 @@ export { AppError } from "./AppError";
 export type { AppErrorOptions } from "./AppError";
 export { translateError } from "./translate";
 export { ErrorSnackbarProvider } from "./ErrorSnackbarProvider";
-export type { ErrorHandlerApi } from "./ErrorSnackbarProvider";
+export type { ErrorHandlerApi } from "./errorSnackbarContext";
 export { useErrorHandler } from "./useErrorHandler";

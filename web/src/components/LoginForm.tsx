@@ -11,10 +11,10 @@ import {
   Link as MuiLink,
 } from "@mui/material";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { useNavigate } from "react-router-dom";
 import { translateError } from "../lib/errors";
+import { PasswordField } from "./PasswordField";
 
 interface LoginFormProps {
   onSwitchToSignUp: () => void;
@@ -102,23 +102,13 @@ export function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
           }}
         />
 
-        <TextField
+        <PasswordField
           fullWidth
           label="Senha"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
           autoComplete="current-password"
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <LockOutlinedIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
           sx={{
             "& .MuiOutlinedInput-root": { borderRadius: 2.2 },
           }}

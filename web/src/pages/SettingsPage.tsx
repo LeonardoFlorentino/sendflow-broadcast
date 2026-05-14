@@ -14,6 +14,7 @@ import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { translateError } from "../lib/errors";
+import { PasswordField } from "../components/PasswordField";
 
 export default function SettingsPage() {
   const { user, updateDisplayName, updatePasswordWithConfirmation } =
@@ -258,10 +259,9 @@ export default function SettingsPage() {
                 <Alert severity="success">{passwordSuccess}</Alert>
               )}
 
-              <TextField
+              <PasswordField
                 fullWidth
                 label="Senha atual"
-                type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 disabled={savingPassword}
@@ -269,10 +269,9 @@ export default function SettingsPage() {
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              <TextField
+              <PasswordField
                 fullWidth
                 label="Nova senha"
-                type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 disabled={savingPassword}
@@ -281,10 +280,9 @@ export default function SettingsPage() {
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              <TextField
+              <PasswordField
                 fullWidth
                 label="Confirmar nova senha"
-                type="password"
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                 disabled={savingPassword}

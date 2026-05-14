@@ -12,10 +12,10 @@ import {
 } from "@mui/material";
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
-import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { useNavigate } from "react-router-dom";
 import { translateError } from "../lib/errors";
+import { PasswordField } from "./PasswordField";
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void;
@@ -134,44 +134,24 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
         />
 
-        <TextField
+        <PasswordField
           fullWidth
           label="Senha"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           disabled={loading}
           autoComplete="new-password"
           helperText="Mínimo 6 caracteres"
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <LockOutlinedIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
           sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
         />
 
-        <TextField
+        <PasswordField
           fullWidth
           label="Confirmar senha"
-          type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           disabled={loading}
           autoComplete="new-password"
-          slotProps={{
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <LockOutlinedIcon fontSize="small" />
-                </InputAdornment>
-              ),
-            },
-          }}
           sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
         />
 

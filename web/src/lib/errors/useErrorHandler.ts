@@ -1,6 +1,8 @@
 import { useContext } from "react";
-import { ErrorSnackbarContext } from "./ErrorSnackbarProvider";
-import type { ErrorHandlerApi } from "./ErrorSnackbarProvider";
+import {
+  ErrorSnackbarContext,
+  type ErrorHandlerApi,
+} from "./errorSnackbarContext";
 
 export function useErrorHandler(): ErrorHandlerApi {
   const ctx = useContext(ErrorSnackbarContext);

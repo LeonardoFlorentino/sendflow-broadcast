@@ -1,8 +1,12 @@
-import { createContext, useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { Alert, Snackbar } from "@mui/material";
 import { AppError } from "./AppError";
 import { translateError } from "./translate";
+import {
+  ErrorSnackbarContext,
+  type ErrorHandlerApi,
+} from "./errorSnackbarContext";
 
 type Severity = "error" | "warning" | "info" | "success";
 
@@ -11,14 +15,6 @@ interface SnackbarMessage {
   severity: Severity;
   code?: string;
 }
-
-export interface ErrorHandlerApi {
-  showError: (err: unknown) => AppError;
-  showMessage: (message: string, severity?: Severity) => void;
-  dismiss: () => void;
-}
-
-export const ErrorSnackbarContext = createContext<ErrorHandlerApi | null>(null);
 
 interface ErrorSnackbarProviderProps {
   children: ReactNode;

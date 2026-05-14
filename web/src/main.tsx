@@ -8,6 +8,7 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs from "dayjs";
 import "dayjs/locale/pt-br";
 import { AuthProvider } from "./contexts/authProvider";
+import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ErrorSnackbarProvider } from "./lib/errors";
 import theme from "./theme";
 import router from "./router";
@@ -19,13 +20,15 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-        <ErrorSnackbarProvider>
-          <AuthProvider>
-            <RouterProvider router={router} />
-          </AuthProvider>
-        </ErrorSnackbarProvider>
-      </LocalizationProvider>
+      <ErrorBoundary>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+          <ErrorSnackbarProvider>
+            <AuthProvider>
+              <RouterProvider router={router} />
+            </AuthProvider>
+          </ErrorSnackbarProvider>
+        </LocalizationProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   </StrictMode>,
 );

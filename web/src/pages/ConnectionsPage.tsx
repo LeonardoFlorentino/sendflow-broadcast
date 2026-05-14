@@ -26,7 +26,8 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useConnections } from "../hooks/useConnections";
-import { translateError } from "../lib/errors";
+import { translateError, useErrorHandler } from "../lib/errors";
+import { ListSkeleton } from "../components/ListSkeleton";
 
 export default function ConnectionsPage() {
   const {
@@ -37,6 +38,7 @@ export default function ConnectionsPage() {
     updateConnection,
     deleteConnection,
   } = useConnections();
+  const { showSuccess } = useErrorHandler();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(
     null,
@@ -112,8 +114,10 @@ export default function ConnectionsPage() {
     try {
       if (editingConnectionId) {
         await updateConnection(editingConnectionId, trimmedName);
+        showSuccess("Conexão atualizada com sucesso");
       } else {
         await createConnection(trimmedName);
+        showSuccess("Conexão criada com sucesso");
       }
 
       handleCloseModal(true);
@@ -139,6 +143,7 @@ export default function ConnectionsPage() {
         id: deletingConnection.id,
         clientId: deletingConnection.clientId,
       });
+      showSuccess("Conexão excluída com sucesso");
       handleCloseDeleteDialog(true);
     } catch (deleteActionError) {
       const appError = translateError(deleteActionError);
@@ -345,12 +350,7 @@ export default function ConnectionsPage() {
           </Stack>
 
           {loading ? (
-            <Stack spacing={2} sx={{ py: 6, alignItems: "center" }}>
-              <CircularProgress />
-              <Typography color="text.secondary">
-                Carregando conexões em tempo real...
-              </Typography>
-            </Stack>
+            <ListSkeleton rows={4} height={72} />
           ) : error ? (
             <Paper
               elevation={0}

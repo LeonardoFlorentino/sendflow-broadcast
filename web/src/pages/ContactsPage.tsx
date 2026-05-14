@@ -26,7 +26,8 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useContacts } from "../hooks/useContacts";
-import { translateError } from "../lib/errors";
+import { translateError, useErrorHandler } from "../lib/errors";
+import { ListSkeleton } from "../components/ListSkeleton";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -66,6 +67,8 @@ export default function ContactsPage() {
   );
   const [deleteError, setDeleteError] = useState("");
   const [deleting, setDeleting] = useState(false);
+
+  const { showSuccess } = useErrorHandler();
 
   const deletingContact = useMemo(
     () =>
@@ -130,8 +133,10 @@ export default function ContactsPage() {
 
       if (editingContactId) {
         await updateContact(editingContactId, payload);
+        showSuccess("Contato atualizado com sucesso");
       } else {
         await createContact(payload);
+        showSuccess("Contato criado com sucesso");
       }
 
       handleCloseModal(true);
@@ -163,6 +168,7 @@ export default function ContactsPage() {
 
     try {
       await deleteContact(deletingContact.id);
+      showSuccess("Contato excluído com sucesso");
       handleCloseDeleteDialog(true);
     } catch (deleteActionError) {
       const appError = translateError(deleteActionError);
@@ -362,12 +368,7 @@ export default function ContactsPage() {
           </Stack>
 
           {loading ? (
-            <Stack spacing={2} sx={{ py: 6, alignItems: "center" }}>
-              <CircularProgress />
-              <Typography color="text.secondary">
-                Carregando contatos em tempo real...
-              </Typography>
-            </Stack>
+            <ListSkeleton rows={4} height={80} />
           ) : error ? (
             <Paper
               elevation={0}

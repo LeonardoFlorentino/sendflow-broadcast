@@ -6,6 +6,7 @@ type Severity = "error" | "warning" | "info" | "success";
 export interface ErrorHandlerApi {
   showError: (err: unknown) => AppError;
   showMessage: (message: string, severity?: Severity) => void;
+  showSuccess: (message: string) => void;
   dismiss: () => void;
 }
 

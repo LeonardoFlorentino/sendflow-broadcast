@@ -17,7 +17,6 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs, { type Dayjs } from "dayjs";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CalendarMonthRoundedIcon from "@mui/icons-material/CalendarMonthRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
@@ -25,7 +24,8 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ContactPhoneRoundedIcon from "@mui/icons-material/ContactPhoneRounded";
 import { useContacts } from "../hooks/useContacts";
 import { useMessages } from "../hooks/useMessages";
-import { translateError } from "../lib/errors";
+import { translateError, useErrorHandler } from "../lib/errors";
+import { ListSkeleton } from "../components/ListSkeleton";
 
 type DeliveryMode = "now" | "schedule";
 
@@ -33,12 +33,12 @@ export default function BroadcastsPage() {
   const navigate = useNavigate();
   const { contacts, loading, error } = useContacts();
   const { createMessage } = useMessages();
+  const { showSuccess } = useErrorHandler();
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [message, setMessage] = useState("");
   const [scheduledDate, setScheduledDate] = useState<Dayjs | null>(null);
   const [scheduledTime, setScheduledTime] = useState<Dayjs | null>(null);
   const [submitError, setSubmitError] = useState("");
-  const [submitSuccess, setSubmitSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const messageInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const scheduledAtInputRef = useRef<HTMLInputElement>(null);
@@ -107,26 +107,22 @@ export default function BroadcastsPage() {
 
   async function saveMessage(mode: DeliveryMode) {
     if (selectedContactIds.length === 0) {
-      setSubmitSuccess("");
       setSubmitError("Selecione pelo menos um contato");
       return;
     }
 
     if (!message.trim()) {
-      setSubmitSuccess("");
       setSubmitError("Escreva o conteúdo da mensagem");
       return;
     }
 
     if (mode === "schedule" && !scheduledAt) {
-      setSubmitSuccess("");
       setSubmitError("Defina a data e o horário do agendamento");
       return;
     }
 
     setSubmitting(true);
     setSubmitError("");
-    setSubmitSuccess("");
 
     try {
       const scheduledDate =
@@ -140,7 +136,7 @@ export default function BroadcastsPage() {
         scheduledAt: scheduledDate,
       });
 
-      setSubmitSuccess(
+      showSuccess(
         mode === "schedule"
           ? "Mensagem agendada com sucesso"
           : "Mensagem salva para envio imediato",
@@ -365,14 +361,7 @@ export default function BroadcastsPage() {
             </Stack>
 
             {loading ? (
-              <Stack spacing={2} sx={{ py: 6, alignItems: "center" }}>
-                <Avatar sx={{ bgcolor: "rgba(192, 132, 252, 0.18)" }}>
-                  <ScheduleRoundedIcon />
-                </Avatar>
-                <Typography color="text.secondary">
-                  Carregando contatos disponíveis...
-                </Typography>
-              </Stack>
+              <ListSkeleton rows={4} height={72} />
             ) : error ? (
               <Paper
                 elevation={0}
@@ -497,9 +486,6 @@ export default function BroadcastsPage() {
 
             <Stack spacing={2}>
               {submitError && <Alert severity="error">{submitError}</Alert>}
-              {submitSuccess && (
-                <Alert severity="success">{submitSuccess}</Alert>
-              )}
 
               <TextField
                 fullWidth
@@ -510,7 +496,6 @@ export default function BroadcastsPage() {
                 onChange={(event) => {
                   setMessage(event.target.value);
                   if (submitError) setSubmitError("");
-                  if (submitSuccess) setSubmitSuccess("");
                 }}
                 placeholder="Escreva a mensagem que será enviada para os contatos selecionados..."
                 inputRef={messageInputRef}
@@ -527,14 +512,13 @@ export default function BroadcastsPage() {
                   onChange={(value) => {
                     setScheduledDate(value);
                     if (submitError) setSubmitError("");
-                    if (submitSuccess) setSubmitSuccess("");
                   }}
                   minDate={dayjs().startOf("day")}
                   format="DD/MM/YYYY"
-                  inputRef={scheduledAtInputRef}
                   slotProps={{
                     textField: {
                       fullWidth: true,
+                      inputRef: scheduledAtInputRef,
                       sx: {
                         "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
                         "& .MuiPickersSectionList-root": { cursor: "text" },
@@ -548,7 +532,6 @@ export default function BroadcastsPage() {
                   onChange={(value) => {
                     setScheduledTime(value);
                     if (submitError) setSubmitError("");
-                    if (submitSuccess) setSubmitSuccess("");
                   }}
                   ampm={false}
                   format="HH:mm"

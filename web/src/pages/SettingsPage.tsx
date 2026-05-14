@@ -13,7 +13,7 @@ import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
 import { useAuthContext } from "../hooks/useAuthContext";
-import { translateError } from "../lib/errors";
+import { translateError, useErrorHandler } from "../lib/errors";
 import { PasswordField } from "../components/PasswordField";
 
 export default function SettingsPage() {
@@ -24,29 +24,26 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [profileError, setProfileError] = useState("");
-  const [profileSuccess, setProfileSuccess] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [passwordSuccess, setPasswordSuccess] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const { showSuccess } = useErrorHandler();
 
   async function handleProfileSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     const trimmedName = displayName.trim();
     if (trimmedName.length < 2) {
-      setProfileSuccess("");
       setProfileError("Informe um nome com pelo menos 2 caracteres");
       return;
     }
 
     setSavingProfile(true);
     setProfileError("");
-    setProfileSuccess("");
 
     try {
       await updateDisplayName(trimmedName);
-      setProfileSuccess("Nome atualizado com sucesso");
+      showSuccess("Nome atualizado com sucesso");
     } catch (error) {
       const appError = translateError(error);
       console.error("Profile update error:", appError.code, appError.originalError);
@@ -60,39 +57,34 @@ export default function SettingsPage() {
     e.preventDefault();
 
     if (!currentPassword) {
-      setPasswordSuccess("");
       setPasswordError("Informe sua senha atual");
       return;
     }
 
     if (newPassword.length < 6) {
-      setPasswordSuccess("");
       setPasswordError("A nova senha deve ter no mínimo 6 caracteres");
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      setPasswordSuccess("");
       setPasswordError("A confirmação da nova senha não confere");
       return;
     }
 
     if (currentPassword === newPassword) {
-      setPasswordSuccess("");
       setPasswordError("A nova senha deve ser diferente da senha atual");
       return;
     }
 
     setSavingPassword(true);
     setPasswordError("");
-    setPasswordSuccess("");
 
     try {
       await updatePasswordWithConfirmation(currentPassword, newPassword);
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
-      setPasswordSuccess("Senha alterada com sucesso");
+      showSuccess("Senha alterada com sucesso");
     } catch (error: unknown) {
       const appError = translateError(error);
       console.error("Password update error:", appError.code, appError.originalError);
@@ -189,9 +181,6 @@ export default function SettingsPage() {
               </Box>
 
               {profileError && <Alert severity="error">{profileError}</Alert>}
-              {profileSuccess && (
-                <Alert severity="success">{profileSuccess}</Alert>
-              )}
 
               <TextField
                 fullWidth
@@ -255,9 +244,6 @@ export default function SettingsPage() {
               </Box>
 
               {passwordError && <Alert severity="error">{passwordError}</Alert>}
-              {passwordSuccess && (
-                <Alert severity="success">{passwordSuccess}</Alert>
-              )}
 
               <PasswordField
                 fullWidth

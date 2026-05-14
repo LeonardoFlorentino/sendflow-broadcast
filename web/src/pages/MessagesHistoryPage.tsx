@@ -33,9 +33,10 @@ import {
   type MessageHistoryStatus,
   useMessagesHistory,
 } from "../hooks/useMessagesHistory";
-import { translateError } from "../lib/errors";
+import { translateError, useErrorHandler } from "../lib/errors";
 import { useMessages } from "../hooks/useMessages";
 import { useContacts } from "../hooks/useContacts";
+import { ListSkeleton } from "../components/ListSkeleton";
 
 function formatScheduledAt(value: Date | null): string {
   if (!value) {
@@ -50,6 +51,7 @@ export default function MessagesHistoryPage() {
   const { messages, loading, error } = useMessagesHistory(status);
   const { contacts } = useContacts();
   const { updateMessage, deleteMessage } = useMessages();
+  const { showSuccess } = useErrorHandler();
 
   const [editingMessage, setEditingMessage] =
     useState<MessageHistoryItem | null>(null);
@@ -140,6 +142,7 @@ export default function MessagesHistoryPage() {
         content: editContent,
         scheduledAt: editScheduledAt.toDate(),
       });
+      showSuccess("Mensagem atualizada com sucesso");
       handleCloseEdit(true);
     } catch (updateError) {
       const appError = translateError(updateError);
@@ -169,6 +172,7 @@ export default function MessagesHistoryPage() {
 
     try {
       await deleteMessage(deletingMessage.id);
+      showSuccess("Mensagem excluída com sucesso");
       handleCloseDelete(true);
     } catch (deleteActionError) {
       const appError = translateError(deleteActionError);
@@ -369,18 +373,7 @@ export default function MessagesHistoryPage() {
           </Box>
 
           {loading ? (
-            <Stack spacing={2} sx={{ py: 6, alignItems: "center" }}>
-              <Avatar sx={{ bgcolor: "rgba(192, 132, 252, 0.18)" }}>
-                {status === "scheduled" ? (
-                  <ScheduleRoundedIcon />
-                ) : (
-                  <SendRoundedIcon />
-                )}
-              </Avatar>
-              <Typography color="text.secondary">
-                Carregando histórico de mensagens...
-              </Typography>
-            </Stack>
+            <ListSkeleton rows={4} height={96} />
           ) : error ? (
             <Paper
               elevation={0}

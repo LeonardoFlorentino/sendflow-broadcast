@@ -38,6 +38,10 @@ export function ErrorSnackbarProvider({
     [],
   );
 
+  const showSuccess = useCallback((message: string) => {
+    setSnack({ message, severity: "success" });
+  }, []);
+
   const showError = useCallback(
     (err: unknown): AppError => {
       const appError = translateError(err);
@@ -56,8 +60,8 @@ export function ErrorSnackbarProvider({
   );
 
   const api = useMemo<ErrorHandlerApi>(
-    () => ({ showError, showMessage, dismiss }),
-    [showError, showMessage, dismiss],
+    () => ({ showError, showMessage, showSuccess, dismiss }),
+    [showError, showMessage, showSuccess, dismiss],
   );
 
   return (

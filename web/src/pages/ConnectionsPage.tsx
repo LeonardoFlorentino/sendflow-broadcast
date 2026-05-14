@@ -26,6 +26,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useConnections } from "../hooks/useConnections";
+import { translateError } from "../lib/errors";
 
 export default function ConnectionsPage() {
   const {
@@ -117,12 +118,9 @@ export default function ConnectionsPage() {
 
       handleCloseModal(true);
     } catch (submitActionError) {
-      console.error("Connection submit error:", submitActionError);
-      const message =
-        submitActionError instanceof Error
-          ? submitActionError.message
-          : "Não foi possível salvar a conexão";
-      setSubmitError(message);
+      const appError = translateError(submitActionError);
+      console.error("Connection submit error:", appError.code, appError.originalError);
+      setSubmitError(appError.userMessage);
     } finally {
       setSaving(false);
     }
@@ -143,12 +141,9 @@ export default function ConnectionsPage() {
       });
       handleCloseDeleteDialog(true);
     } catch (deleteActionError) {
-      console.error("Connection delete error:", deleteActionError);
-      const message =
-        deleteActionError instanceof Error
-          ? deleteActionError.message
-          : "Não foi possível excluir a conexão";
-      setDeleteError(message);
+      const appError = translateError(deleteActionError);
+      console.error("Connection delete error:", appError.code, appError.originalError);
+      setDeleteError(appError.userMessage);
     } finally {
       setDeleting(false);
     }

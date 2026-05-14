@@ -12,9 +12,9 @@ import {
 } from "@mui/material";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import { FirebaseError } from "firebase/app";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { useNavigate } from "react-router-dom";
+import { translateError } from "../lib/errors";
 
 interface LoginFormProps {
   onSwitchToSignUp: () => void;
@@ -58,24 +58,9 @@ export function LoginForm({ onSwitchToSignUp }: LoginFormProps) {
       await signIn(email, password);
       navigate("/");
     } catch (err: unknown) {
-      const code = err instanceof FirebaseError ? err.code : "";
-      console.error("Sign in error:", code, err);
-
-      if (code === "auth/invalid-credential") {
-        setError("Email ou senha incorretos");
-      } else if (code === "auth/user-not-found") {
-        setError("Usuário não encontrado");
-      } else if (code === "auth/invalid-email") {
-        setError("Email inválido");
-      } else if (code === "auth/too-many-requests") {
-        setError(
-          "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
-        );
-      } else {
-        const message =
-          err instanceof Error ? err.message : "Erro ao fazer login";
-        setError(message);
-      }
+      const appError = translateError(err);
+      console.error("Sign in error:", appError.code, appError.originalError);
+      setError(appError.userMessage);
     } finally {
       setLoading(false);
     }

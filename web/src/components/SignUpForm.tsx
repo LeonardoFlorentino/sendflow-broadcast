@@ -13,9 +13,9 @@ import {
 import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import { FirebaseError } from "firebase/app";
 import { useAuthContext } from "../hooks/useAuthContext";
 import { useNavigate } from "react-router-dom";
+import { translateError } from "../lib/errors";
 
 interface SignUpFormProps {
   onSwitchToLogin: () => void;
@@ -73,24 +73,9 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
       await signUp(email, password, displayName);
       navigate("/");
     } catch (err: unknown) {
-      const code = err instanceof FirebaseError ? err.code : "";
-      console.error("Sign up error:", code, err);
-
-      if (code === "auth/email-already-in-use") {
-        setError("Email já cadastrado");
-      } else if (code === "auth/weak-password") {
-        setError("Senha muito fraca");
-      } else if (code === "auth/operation-not-allowed") {
-        setError("Cadastro por email/senha está desativado no Firebase Auth.");
-      } else if (code === "auth/invalid-email") {
-        setError("Email inválido");
-      } else if (code === "auth/network-request-failed") {
-        setError("Falha de rede. Verifique sua conexão e tente novamente.");
-      } else {
-        const message =
-          err instanceof Error ? err.message : "Erro ao cadastrar";
-        setError(message);
-      }
+      const appError = translateError(err);
+      console.error("Sign up error:", appError.code, appError.originalError);
+      setError(appError.userMessage);
     } finally {
       setLoading(false);
     }

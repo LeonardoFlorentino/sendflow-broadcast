@@ -33,6 +33,7 @@ import {
   type MessageHistoryStatus,
   useMessagesHistory,
 } from "../hooks/useMessagesHistory";
+import { translateError } from "../lib/errors";
 import { useMessages } from "../hooks/useMessages";
 import { useContacts } from "../hooks/useContacts";
 
@@ -141,12 +142,9 @@ export default function MessagesHistoryPage() {
       });
       handleCloseEdit(true);
     } catch (updateError) {
-      console.error("Message update error:", updateError);
-      const errorMessage =
-        updateError instanceof Error
-          ? updateError.message
-          : "Não foi possível atualizar a mensagem";
-      setEditError(errorMessage);
+      const appError = translateError(updateError);
+      console.error("Message update error:", appError.code, appError.originalError);
+      setEditError(appError.userMessage);
     } finally {
       setSavingEdit(false);
     }
@@ -173,12 +171,9 @@ export default function MessagesHistoryPage() {
       await deleteMessage(deletingMessage.id);
       handleCloseDelete(true);
     } catch (deleteActionError) {
-      console.error("Message delete error:", deleteActionError);
-      const errorMessage =
-        deleteActionError instanceof Error
-          ? deleteActionError.message
-          : "Não foi possível excluir a mensagem";
-      setDeleteError(errorMessage);
+      const appError = translateError(deleteActionError);
+      console.error("Message delete error:", appError.code, appError.originalError);
+      setDeleteError(appError.userMessage);
     } finally {
       setDeleting(false);
     }

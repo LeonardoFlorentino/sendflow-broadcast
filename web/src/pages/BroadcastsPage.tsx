@@ -25,6 +25,7 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import ContactPhoneRoundedIcon from "@mui/icons-material/ContactPhoneRounded";
 import { useContacts } from "../hooks/useContacts";
 import { useMessages } from "../hooks/useMessages";
+import { translateError } from "../lib/errors";
 
 type DeliveryMode = "now" | "schedule";
 
@@ -149,12 +150,9 @@ export default function BroadcastsPage() {
       setScheduledTime(null);
       setSelectedContactIds([]);
     } catch (submitActionError) {
-      console.error("Message save error:", submitActionError);
-      const errorMessage =
-        submitActionError instanceof Error
-          ? submitActionError.message
-          : "Não foi possível salvar a mensagem";
-      setSubmitError(errorMessage);
+      const appError = translateError(submitActionError);
+      console.error("Message save error:", appError.code, appError.originalError);
+      setSubmitError(appError.userMessage);
     } finally {
       setSubmitting(false);
     }

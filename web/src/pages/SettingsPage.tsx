@@ -12,8 +12,8 @@ import {
 import BadgeRoundedIcon from "@mui/icons-material/BadgeRounded";
 import LockResetRoundedIcon from "@mui/icons-material/LockResetRounded";
 import SaveRoundedIcon from "@mui/icons-material/SaveRounded";
-import { FirebaseError } from "firebase/app";
 import { useAuthContext } from "../hooks/useAuthContext";
+import { translateError } from "../lib/errors";
 
 export default function SettingsPage() {
   const { user, updateDisplayName, updatePasswordWithConfirmation } =
@@ -47,9 +47,9 @@ export default function SettingsPage() {
       await updateDisplayName(trimmedName);
       setProfileSuccess("Nome atualizado com sucesso");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Erro ao atualizar o nome";
-      setProfileError(message);
+      const appError = translateError(error);
+      console.error("Profile update error:", appError.code, appError.originalError);
+      setProfileError(appError.userMessage);
     } finally {
       setSavingProfile(false);
     }
@@ -93,21 +93,14 @@ export default function SettingsPage() {
       setConfirmNewPassword("");
       setPasswordSuccess("Senha alterada com sucesso");
     } catch (error: unknown) {
-      const code = error instanceof FirebaseError ? error.code : "";
-
-      if (code === "auth/invalid-credential") {
-        setPasswordError("A senha atual está incorreta");
-      } else if (code === "auth/weak-password") {
-        setPasswordError("A nova senha é muito fraca");
-      } else if (code === "auth/too-many-requests") {
-        setPasswordError(
-          "Muitas tentativas. Aguarde alguns minutos e tente novamente.",
-        );
-      } else {
-        const message =
-          error instanceof Error ? error.message : "Erro ao alterar a senha";
-        setPasswordError(message);
-      }
+      const appError = translateError(error);
+      console.error("Password update error:", appError.code, appError.originalError);
+      // Para troca de senha, "credenciais inválidas" significa senha atual incorreta
+      const message =
+        appError.code === "auth/invalid_credentials"
+          ? "A senha atual está incorreta."
+          : appError.userMessage;
+      setPasswordError(message);
     } finally {
       setSavingPassword(false);
     }

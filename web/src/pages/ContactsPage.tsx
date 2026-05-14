@@ -26,6 +26,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useContacts } from "../hooks/useContacts";
+import { translateError } from "../lib/errors";
 
 function formatPhone(value: string): string {
   const digits = value.replace(/\D/g, "").slice(0, 11);
@@ -135,12 +136,9 @@ export default function ContactsPage() {
 
       handleCloseModal(true);
     } catch (submitActionError) {
-      console.error("Contact submit error:", submitActionError);
-      const message =
-        submitActionError instanceof Error
-          ? submitActionError.message
-          : "Não foi possível salvar o contato";
-      setSubmitError(message);
+      const appError = translateError(submitActionError);
+      console.error("Contact submit error:", appError.code, appError.originalError);
+      setSubmitError(appError.userMessage);
     } finally {
       setSaving(false);
     }
@@ -167,12 +165,9 @@ export default function ContactsPage() {
       await deleteContact(deletingContact.id);
       handleCloseDeleteDialog(true);
     } catch (deleteActionError) {
-      console.error("Contact delete error:", deleteActionError);
-      const message =
-        deleteActionError instanceof Error
-          ? deleteActionError.message
-          : "Não foi possível excluir o contato";
-      setDeleteError(message);
+      const appError = translateError(deleteActionError);
+      console.error("Contact delete error:", appError.code, appError.originalError);
+      setDeleteError(appError.userMessage);
     } finally {
       setDeleting(false);
     }

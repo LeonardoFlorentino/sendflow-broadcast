@@ -1,10 +1,10 @@
-import { setGlobalOptions } from "firebase-functions";
-import { onSchedule } from "firebase-functions/v2/scheduler";
-import { logger } from "firebase-functions/v2";
-import { initializeApp } from "firebase-admin/app";
-import { Timestamp, getFirestore } from "firebase-admin/firestore";
+import {setGlobalOptions} from "firebase-functions";
+import {onSchedule} from "firebase-functions/v2/scheduler";
+import {logger} from "firebase-functions/v2";
+import {initializeApp} from "firebase-admin/app";
+import {Timestamp, getFirestore} from "firebase-admin/firestore";
 
-setGlobalOptions({ maxInstances: 10, region: "southamerica-east1" });
+setGlobalOptions({maxInstances: 10, region: "southamerica-east1"});
 
 initializeApp();
 

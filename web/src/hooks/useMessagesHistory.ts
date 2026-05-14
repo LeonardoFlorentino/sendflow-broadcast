@@ -96,7 +96,7 @@ export function useMessagesHistory(
         console.error("Messages history snapshot error:", snapshotError);
         setSnapshotState({
           messages: [],
-          error: "Nao foi possivel carregar o historico de mensagens",
+          error: "Não foi possível carregar o histórico de mensagens",
           resolvedKey,
         });
       },

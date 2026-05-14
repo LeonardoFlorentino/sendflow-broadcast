@@ -12,10 +12,12 @@ import CampaignRoundedIcon from "@mui/icons-material/CampaignRounded";
 import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import ArrowOutwardRoundedIcon from "@mui/icons-material/ArrowOutwardRounded";
+import { useNavigate } from "react-router-dom";
 import { useAuthContext } from "../hooks/useAuthContext";
 
 export default function DashboardPage() {
-  const { user, userId } = useAuthContext();
+  const navigate = useNavigate();
+  const { user } = useAuthContext();
   const displayName = user?.displayName?.trim() || "";
 
   const highlights = [
@@ -133,6 +135,7 @@ export default function DashboardPage() {
                 variant="contained"
                 size="large"
                 endIcon={<ArrowOutwardRoundedIcon />}
+                onClick={() => navigate("/broadcasts")}
                 sx={{
                   py: 1.25,
                   borderRadius: 2.5,
@@ -145,6 +148,7 @@ export default function DashboardPage() {
               <Button
                 variant="outlined"
                 size="large"
+                onClick={() => navigate("/contacts")}
                 sx={{ py: 1.25, borderRadius: 2.5, fontWeight: 700 }}
               >
                 Importar contatos
@@ -310,36 +314,6 @@ export default function DashboardPage() {
                 </Typography>
                 <Typography variant="body2">
                   {user?.email || "Não informado"}
-                </Typography>
-              </Box>
-
-              <Box
-                sx={{
-                  p: 2,
-                  borderRadius: 3,
-                  bgcolor: "rgba(255, 255, 255, 0.03)",
-                  border: "1px solid",
-                  borderColor: "divider",
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    display: "block",
-                    mb: 0.75,
-                    color: "text.secondary",
-                  }}
-                >
-                  UID
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    fontFamily: "monospace",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {userId}
                 </Typography>
               </Box>
             </Stack>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   AppBar,
   Avatar,
@@ -32,6 +32,30 @@ import { useAuthContext } from "../hooks/useAuthContext";
 
 const DRAWER_WIDTH = 286;
 const COLLAPSED_DRAWER_WIDTH = 88;
+
+const pageMeta: Record<string, { title: string; caption: string }> = {
+  "/": { title: "Dashboard", caption: "Visão geral da operação" },
+  "/broadcasts": {
+    title: "Broadcasts",
+    caption: "Campanhas, janelas e performance",
+  },
+  "/broadcasts/history": {
+    title: "Histórico de mensagens",
+    caption: "Envios recentes e status de entrega",
+  },
+  "/contacts": {
+    title: "Contatos",
+    caption: "Base, segmentos e importação",
+  },
+  "/connections": {
+    title: "Conexões",
+    caption: "Integrações e estado em tempo real",
+  },
+  "/settings": {
+    title: "Configurações",
+    caption: "Perfil, segurança e preferências",
+  },
+};
 
 const navItems = [
   {
@@ -68,7 +92,13 @@ export default function MainLayout() {
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const { user, signOut } = useAuthContext();
   const navigate = useNavigate();
+  const location = useLocation();
 
+  const currentPage =
+    pageMeta[location.pathname] ?? {
+      title: "SendFlow",
+      caption: "Central de broadcasts",
+    };
   const displayName = user?.displayName?.trim() || "Operador";
   const isCollapsed = isMobile || isMediumScreen || desktopCollapsed;
   const drawerWidth = isCollapsed ? COLLAPSED_DRAWER_WIDTH : DRAWER_WIDTH;
@@ -466,19 +496,15 @@ export default function MainLayout() {
             sx={{
               minHeight: { xs: 76, lg: 82 },
               px: { xs: 2, md: 3, lg: 4 },
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "minmax(0, 1fr) auto",
-                lg: "minmax(0, 1fr) 220px",
-              },
+              display: "flex",
               alignItems: "center",
-              gap: { xs: 1.5, lg: 2.5 },
+              gap: { xs: 1.5, md: 2, lg: 3 },
             }}
           >
             <Stack
               direction="row"
               spacing={1.5}
-              sx={{ minWidth: 0, alignItems: "center" }}
+              sx={{ minWidth: 0, alignItems: "center", flexShrink: 0 }}
             >
               <Avatar
                 variant="rounded"
@@ -493,7 +519,7 @@ export default function MainLayout() {
               >
                 <BoltRoundedIcon fontSize="small" />
               </Avatar>
-              <Box sx={{ minWidth: 0 }}>
+              <Box sx={{ minWidth: 0, display: { xs: "none", sm: "block" } }}>
                 <Typography variant="h6" noWrap sx={{ fontWeight: 700 }}>
                   SendFlow
                 </Typography>
@@ -503,25 +529,45 @@ export default function MainLayout() {
               </Box>
             </Stack>
 
-            <Box sx={{ display: { xs: "none", lg: "block" } }} />
+            <Divider
+              orientation="vertical"
+              flexItem
+              sx={{
+                display: { xs: "none", md: "block" },
+                my: 1.5,
+                borderColor: "rgba(255,255,255,0.08)",
+              }}
+            />
 
-            {isMobile ? (
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Typography
+                variant="subtitle1"
+                noWrap
+                sx={{ fontWeight: 700, lineHeight: 1.2 }}
+              >
+                {currentPage.title}
+              </Typography>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                noWrap
+                sx={{ display: { xs: "none", sm: "block" } }}
+              >
+                {currentPage.caption}
+              </Typography>
+            </Box>
+
+            {isMobile && (
               <Tooltip title="Abrir menu">
                 <IconButton
                   edge="end"
                   onClick={() => setMobileOpen(true)}
                   aria-label="Abrir menu"
-                  sx={{ justifySelf: "end" }}
+                  sx={{ flexShrink: 0 }}
                 >
                   <MenuIcon />
                 </IconButton>
               </Tooltip>
-            ) : (
-              <Box
-                sx={{
-                  display: { xs: "none", lg: "block" },
-                }}
-              />
             )}
           </Toolbar>
         </AppBar>

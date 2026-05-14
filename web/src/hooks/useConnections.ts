@@ -92,7 +92,7 @@ export function useConnections(): UseConnectionsResult {
         console.error("Connections snapshot error:", snapshotError);
         setSnapshotState({
           connections: [],
-          error: "Nao foi possivel carregar as conexoes em tempo real",
+          error: "Não foi possível carregar as conexões em tempo real",
           resolvedUserId: userId,
         });
       },
@@ -112,7 +112,7 @@ export function useConnections(): UseConnectionsResult {
 
   async function createConnection(name: string): Promise<void> {
     if (!userId) {
-      throw new Error("Usuario nao autenticado");
+      throw new Error("Usuário não autenticado");
     }
 
     await addDoc(collection(db, "connections"), {
@@ -126,7 +126,7 @@ export function useConnections(): UseConnectionsResult {
     name: string,
   ): Promise<void> {
     if (!userId) {
-      throw new Error("Usuario nao autenticado");
+      throw new Error("Usuário não autenticado");
     }
 
     await updateDoc(doc(db, "connections", connectionId), {
@@ -139,11 +139,11 @@ export function useConnections(): UseConnectionsResult {
     connection: Pick<Connection, "id" | "clientId">,
   ): Promise<void> {
     if (!userId) {
-      throw new Error("Usuario nao autenticado");
+      throw new Error("Usuário não autenticado");
     }
 
     if (connection.clientId !== userId) {
-      throw new Error("Voce nao pode excluir uma conexao de outro cliente");
+      throw new Error("Você não pode excluir uma conexão de outro cliente");
     }
 
     await deleteDoc(doc(db, "connections", connection.id));

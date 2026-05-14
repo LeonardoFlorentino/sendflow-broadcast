@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   addDoc,
   collection,
+  deleteDoc,
   doc,
   onSnapshot,
   query,
@@ -34,6 +35,7 @@ interface UseContactsResult {
     contactId: string,
     input: Pick<Contact, "name" | "phone">,
   ) => Promise<void>;
+  deleteContact: (contactId: string) => Promise<void>;
 }
 
 function mapContact(doc: DocumentData & { id?: string }): Contact {
@@ -83,7 +85,7 @@ export function useContacts(): UseContactsResult {
         console.error("Contacts snapshot error:", snapshotError);
         setSnapshotState({
           contacts: [],
-          error: "Nao foi possivel carregar os contatos em tempo real",
+          error: "Não foi possível carregar os contatos em tempo real",
           resolvedUserId: userId,
         });
       },
@@ -105,7 +107,7 @@ export function useContacts(): UseContactsResult {
     input: Pick<Contact, "name" | "phone">,
   ): Promise<void> {
     if (!userId) {
-      throw new Error("Usuario nao autenticado");
+      throw new Error("Usuário não autenticado");
     }
 
     await addDoc(collection(db, "contacts"), {
@@ -120,7 +122,7 @@ export function useContacts(): UseContactsResult {
     input: Pick<Contact, "name" | "phone">,
   ): Promise<void> {
     if (!userId) {
-      throw new Error("Usuario nao autenticado");
+      throw new Error("Usuário não autenticado");
     }
 
     await updateDoc(doc(db, "contacts", contactId), {
@@ -130,11 +132,20 @@ export function useContacts(): UseContactsResult {
     });
   }
 
+  async function deleteContact(contactId: string): Promise<void> {
+    if (!userId) {
+      throw new Error("Usuário não autenticado");
+    }
+
+    await deleteDoc(doc(db, "contacts", contactId));
+  }
+
   return {
     contacts,
     loading,
     error,
     createContact,
     updateContact,
+    deleteContact,
   };
 }

@@ -18,6 +18,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import dayjs, { type Dayjs } from "dayjs";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
@@ -38,18 +40,7 @@ function formatScheduledAt(value: Date | null): string {
     return "Sem data definida";
   }
 
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(value);
-}
-
-function toDateTimeLocal(date: Date): string {
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  );
+  return dayjs(value).format("DD/MM/YYYY HH:mm");
 }
 
 export default function MessagesHistoryPage() {
@@ -61,7 +52,7 @@ export default function MessagesHistoryPage() {
   const [editingMessage, setEditingMessage] =
     useState<MessageHistoryItem | null>(null);
   const [editContent, setEditContent] = useState("");
-  const [editScheduledAt, setEditScheduledAt] = useState("");
+  const [editScheduledAt, setEditScheduledAt] = useState<Dayjs | null>(null);
   const [editContactIds, setEditContactIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
@@ -80,9 +71,7 @@ export default function MessagesHistoryPage() {
     setEditingMessage(message);
     setEditContent(message.content);
     setEditScheduledAt(
-      message.scheduledAt
-        ? toDateTimeLocal(message.scheduledAt.toDate())
-        : toDateTimeLocal(new Date()),
+      message.scheduledAt ? dayjs(message.scheduledAt.toDate()) : dayjs(),
     );
     setEditContactIds(message.contactIds);
     setEditError("");
@@ -92,7 +81,7 @@ export default function MessagesHistoryPage() {
     if (savingEdit && !force) return;
     setEditingMessage(null);
     setEditContent("");
-    setEditScheduledAt("");
+    setEditScheduledAt(null);
     setEditContactIds([]);
     setEditError("");
   }
@@ -130,7 +119,7 @@ export default function MessagesHistoryPage() {
       await updateMessage(editingMessage.id, {
         contactIds: editContactIds,
         content: editContent,
-        scheduledAt: new Date(editScheduledAt),
+        scheduledAt: editScheduledAt.toDate(),
       });
       handleCloseEdit(true);
     } catch (updateError) {
@@ -442,9 +431,6 @@ export default function MessagesHistoryPage() {
                         >
                           {message.content}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          ID: {message.id}
-                        </Typography>
                       </Box>
                       <Chip
                         label={isScheduled ? "Agendada" : "Enviada"}
@@ -556,15 +542,20 @@ export default function MessagesHistoryPage() {
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              <TextField
-                fullWidth
-                type="datetime-local"
+              <DateTimePicker
                 label="Data e horário do agendamento"
                 value={editScheduledAt}
-                onChange={(event) => setEditScheduledAt(event.target.value)}
+                onChange={(value) => setEditScheduledAt(value)}
                 disabled={savingEdit}
-                slotProps={{ inputLabel: { shrink: true } }}
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
+                minDateTime={dayjs()}
+                ampm={false}
+                format="DD/MM/YYYY HH:mm"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    sx: { "& .MuiOutlinedInput-root": { borderRadius: 2.2 } },
+                  },
+                }}
               />
 
               <Box>

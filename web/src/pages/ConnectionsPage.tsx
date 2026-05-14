@@ -26,10 +26,8 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useConnections } from "../hooks/useConnections";
-import { useAuthContext } from "../hooks/useAuthContext";
 
 export default function ConnectionsPage() {
-  const { userId } = useAuthContext();
   const {
     connections,
     loading,
@@ -54,15 +52,6 @@ export default function ConnectionsPage() {
   const activeConnections = connections.filter(
     (connection) => connection.status?.toLowerCase() === "connected",
   ).length;
-  const editingConnection = useMemo(
-    () =>
-      editingConnectionId
-        ? connections.find(
-            (connection) => connection.id === editingConnectionId,
-          )
-        : null,
-    [connections, editingConnectionId],
-  );
   const deletingConnection = useMemo(
     () =>
       deletingConnectionId
@@ -132,7 +121,7 @@ export default function ConnectionsPage() {
       const message =
         submitActionError instanceof Error
           ? submitActionError.message
-          : "Nao foi possivel salvar a conexao";
+          : "Não foi possível salvar a conexão";
       setSubmitError(message);
     } finally {
       setSaving(false);
@@ -158,7 +147,7 @@ export default function ConnectionsPage() {
       const message =
         deleteActionError instanceof Error
           ? deleteActionError.message
-          : "Nao foi possivel excluir a conexao";
+          : "Não foi possível excluir a conexão";
       setDeleteError(message);
     } finally {
       setDeleting(false);
@@ -197,7 +186,7 @@ export default function ConnectionsPage() {
             <Box sx={{ maxWidth: 700 }}>
               <Chip
                 icon={<HubRoundedIcon />}
-                label="Conexoes em tempo real"
+                label="Conexões em tempo real"
                 color="primary"
                 sx={{ mb: 2, fontWeight: 700 }}
               />
@@ -210,11 +199,11 @@ export default function ConnectionsPage() {
                   lineHeight: 1.05,
                 }}
               >
-                Visibilidade instantanea das conexoes do cliente.
+                Visibilidade instantânea das conexões do cliente.
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 600 }}>
-                Esta tela acompanha a colecao <code>connections</code> em tempo
-                real com filtro obrigatorio por <code>clientId</code> do usuario
+                Esta tela acompanha a coleção <code>connections</code> em tempo
+                real com filtro obrigatório por <code>clientId</code> do usuário
                 logado.
               </Typography>
             </Box>
@@ -231,32 +220,8 @@ export default function ConnectionsPage() {
                   boxShadow: "0 12px 22px rgba(168, 85, 247, 0.25)",
                 }}
               >
-                Nova conexao
+                Nova conexão
               </Button>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  borderRadius: 3,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                }}
-              >
-                <Typography variant="caption" color="text.secondary">
-                  ClientId ativo
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    mt: 0.75,
-                    fontFamily: "monospace",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {userId}
-                </Typography>
-              </Paper>
             </Stack>
           </Stack>
         </Paper>
@@ -270,7 +235,7 @@ export default function ConnectionsPage() {
         >
           {[
             {
-              label: "Conexoes listadas",
+              label: "Conexões listadas",
               value: String(connections.length).padStart(2, "0"),
               icon: <LinkRoundedIcon />,
               tint: "rgba(59, 130, 246, 0.16)",
@@ -354,7 +319,7 @@ export default function ConnectionsPage() {
           >
             <Box>
               <Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700 }}>
-                Lista de conexoes
+                Lista de conexões
               </Typography>
               <Typography color="text.secondary" variant="body2">
                 Atualizacao em tempo real direto do Firestore com criacao e
@@ -379,7 +344,7 @@ export default function ConnectionsPage() {
                   boxShadow: "0 12px 22px rgba(168, 85, 247, 0.22)",
                 }}
               >
-                Criar conexao
+                Criar conexão
               </Button>
             </Stack>
           </Stack>
@@ -388,7 +353,7 @@ export default function ConnectionsPage() {
             <Stack spacing={2} sx={{ py: 6, alignItems: "center" }}>
               <CircularProgress />
               <Typography color="text.secondary">
-                Carregando conexoes em tempo real...
+                Carregando conexões em tempo real...
               </Typography>
             </Stack>
           ) : error ? (
@@ -424,11 +389,11 @@ export default function ConnectionsPage() {
               }}
             >
               <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
-                Nenhuma conexao encontrada
+                Nenhuma conexão encontrada
               </Typography>
               <Typography color="text.secondary">
-                Nenhum documento com <code>clientId</code> igual a este usuario
-                foi retornado pela colecao <code>connections</code>.
+                Nenhum documento com <code>clientId</code> igual a este usuário
+                foi retornado pela coleção <code>connections</code>.
               </Typography>
             </Paper>
           ) : (
@@ -453,10 +418,7 @@ export default function ConnectionsPage() {
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
                         {connection.name ||
                           connection.phone ||
-                          "Conexao sem nome"}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        ID: {connection.id}
+                          "Conexão sem nome"}
                       </Typography>
                     </Box>
                     <Stack
@@ -505,9 +467,6 @@ export default function ConnectionsPage() {
                     </Stack>
                   </Stack>
 
-                  <Typography variant="body2" color="text.secondary">
-                    clientId: {connection.clientId}
-                  </Typography>
                   {connection.phone && (
                     <Typography variant="body2" color="text.secondary">
                       Telefone: {connection.phone}
@@ -548,11 +507,11 @@ export default function ConnectionsPage() {
             <Stack spacing={2.5}>
               <Box>
                 <Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700 }}>
-                  {isEditing ? "Editar conexao" : "Nova conexao"}
+                  {isEditing ? "Editar conexão" : "Nova conexão"}
                 </Typography>
                 <Typography color="text.secondary" variant="body2">
                   Apenas os campos <code>name</code> e <code>clientId</code>{" "}
-                  serao persistidos na colecao <code>connections</code>.
+                  serão persistidos na coleção <code>connections</code>.
                 </Typography>
               </Box>
 
@@ -560,27 +519,13 @@ export default function ConnectionsPage() {
 
               <TextField
                 fullWidth
-                label="Nome da conexao"
+                label="Nome da conexão"
                 value={connectionName}
                 onChange={(e) => setConnectionName(e.target.value)}
                 disabled={saving}
                 autoFocus
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
-
-              <TextField
-                fullWidth
-                label="ClientId"
-                value={userId ?? ""}
-                disabled
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
-              />
-
-              {isEditing && editingConnection && (
-                <Typography variant="caption" color="text.secondary">
-                  Editando o documento {editingConnection.id}
-                </Typography>
-              )}
 
               <Stack
                 direction="row"
@@ -608,7 +553,7 @@ export default function ConnectionsPage() {
                     boxShadow: "0 12px 22px rgba(168, 85, 247, 0.25)",
                   }}
                 >
-                  {isEditing ? "Salvar alteracoes" : "Criar conexao"}
+                  {isEditing ? "Salvar alterações" : "Criar conexão"}
                 </Button>
               </Stack>
             </Stack>
@@ -635,17 +580,17 @@ export default function ConnectionsPage() {
         }}
       >
         <DialogTitle sx={{ pb: 1, fontWeight: 700 }}>
-          Confirmar exclusao
+          Confirmar exclusão
         </DialogTitle>
         <DialogContent>
           <Stack spacing={2}>
             <DialogContentText sx={{ color: "text.secondary" }}>
               {deletingConnection
-                ? `Tem certeza que deseja excluir a conexao "${deletingConnection.name || "Sem nome"}"?`
-                : "Tem certeza que deseja excluir esta conexao?"}
+                ? `Tem certeza que deseja excluir a conexão "${deletingConnection.name || "Sem nome"}"?`
+                : "Tem certeza que deseja excluir esta conexão?"}
             </DialogContentText>
             <DialogContentText sx={{ color: "text.secondary" }}>
-              Esta acao remove o documento da colecao <code>connections</code> e
+              Esta ação remove o documento da coleção <code>connections</code> e
               nao pode ser desfeita.
             </DialogContentText>
             {deleteError && <Alert severity="error">{deleteError}</Alert>}
@@ -673,7 +618,7 @@ export default function ConnectionsPage() {
             }
             sx={{ borderRadius: 2.2, fontWeight: 700 }}
           >
-            Excluir conexao
+            Excluir conexão
           </Button>
         </DialogActions>
       </Dialog>

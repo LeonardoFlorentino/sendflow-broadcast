@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Alert,
@@ -13,6 +13,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import dayjs, { type Dayjs } from "dayjs";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
@@ -31,11 +33,21 @@ export default function BroadcastsPage() {
   const { createMessage } = useMessages();
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [message, setMessage] = useState("");
-  const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("now");
-  const [scheduledAt, setScheduledAt] = useState("");
+  const [scheduledAt, setScheduledAt] = useState<Dayjs | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const messageInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const scheduledAtInputRef = useRef<HTMLInputElement>(null);
+
+  function focusComposer(field: "message" | "schedule") {
+    const target =
+      field === "message"
+        ? messageInputRef.current
+        : scheduledAtInputRef.current;
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    target?.focus({ preventScroll: true });
+  }
 
   const selectedContacts = useMemo(
     () => contacts.filter((contact) => selectedContactIds.includes(contact.id)),
@@ -106,7 +118,9 @@ export default function BroadcastsPage() {
 
     try {
       const scheduledDate =
-        mode === "schedule" ? new Date(scheduledAt) : new Date();
+        mode === "schedule" && scheduledAt
+          ? scheduledAt.toDate()
+          : new Date();
 
       await createMessage({
         contactIds: selectedContactIds,
@@ -120,9 +134,8 @@ export default function BroadcastsPage() {
           : "Mensagem salva para envio imediato",
       );
       setMessage("");
-      setScheduledAt("");
+      setScheduledAt(null);
       setSelectedContactIds([]);
-      setDeliveryMode("now");
     } catch (submitActionError) {
       console.error("Message save error:", submitActionError);
       const errorMessage =
@@ -162,7 +175,10 @@ export default function BroadcastsPage() {
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={3}
-            sx={{ justifyContent: "space-between" }}
+            sx={{
+              justifyContent: "space-between",
+              alignItems: { xs: "stretch", md: "center" },
+            }}
           >
             <Box sx={{ maxWidth: 700 }}>
               <Chip
@@ -190,33 +206,26 @@ export default function BroadcastsPage() {
 
             <Stack spacing={1.5} sx={{ minWidth: { md: 280 } }}>
               <Button
-                variant={deliveryMode === "now" ? "contained" : "outlined"}
+                variant="contained"
                 startIcon={<SendRoundedIcon />}
-                onClick={() => setDeliveryMode("now")}
+                onClick={() => focusComposer("message")}
                 sx={{
                   py: 1.25,
                   borderRadius: 2.5,
                   fontWeight: 700,
-                  boxShadow:
-                    deliveryMode === "now"
-                      ? "0 12px 22px rgba(168, 85, 247, 0.25)"
-                      : "none",
+                  boxShadow: "0 12px 22px rgba(168, 85, 247, 0.25)",
                 }}
               >
                 Enviar Agora
               </Button>
               <Button
-                variant={deliveryMode === "schedule" ? "contained" : "outlined"}
+                variant="outlined"
                 startIcon={<CalendarMonthRoundedIcon />}
-                onClick={() => setDeliveryMode("schedule")}
+                onClick={() => focusComposer("schedule")}
                 sx={{
                   py: 1.25,
                   borderRadius: 2.5,
                   fontWeight: 700,
-                  boxShadow:
-                    deliveryMode === "schedule"
-                      ? "0 12px 22px rgba(168, 85, 247, 0.25)"
-                      : "none",
                 }}
               >
                 Agendar
@@ -494,24 +503,31 @@ export default function BroadcastsPage() {
                   if (submitSuccess) setSubmitSuccess("");
                 }}
                 placeholder="Escreva a mensagem que será enviada para os contatos selecionados..."
+                inputRef={messageInputRef}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              {deliveryMode === "schedule" && (
-                <TextField
-                  fullWidth
-                  type="datetime-local"
-                  label="Data e horário do agendamento"
-                  value={scheduledAt}
-                  onChange={(event) => {
-                    setScheduledAt(event.target.value);
-                    if (submitError) setSubmitError("");
-                    if (submitSuccess) setSubmitSuccess("");
-                  }}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
-                />
-              )}
+              <DateTimePicker
+                label="Agendar para (opcional)"
+                value={scheduledAt}
+                onChange={(value) => {
+                  setScheduledAt(value);
+                  if (submitError) setSubmitError("");
+                  if (submitSuccess) setSubmitSuccess("");
+                }}
+                minDateTime={dayjs()}
+                ampm={false}
+                format="DD/MM/YYYY HH:mm"
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    helperText:
+                      "Deixe em branco para usar o botão Enviar Agora.",
+                    inputRef: scheduledAtInputRef,
+                    sx: { "& .MuiOutlinedInput-root": { borderRadius: 2.2 } },
+                  },
+                }}
+              />
 
               <Paper
                 elevation={0}
@@ -531,16 +547,14 @@ export default function BroadcastsPage() {
                     Destinatários: {selectedContacts.length}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Modo: {deliveryMode === "now" ? "Enviar Agora" : "Agendar"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
                     Conteúdo: {message.trim().length} caracteres
                   </Typography>
-                  {deliveryMode === "schedule" && (
-                    <Typography variant="body2" color="text.secondary">
-                      Agendamento: {scheduledAt || "Não definido"}
-                    </Typography>
-                  )}
+                  <Typography variant="body2" color="text.secondary">
+                    Agendamento:{" "}
+                    {scheduledAt
+                      ? scheduledAt.format("DD/MM/YYYY HH:mm")
+                      : "Envio imediato"}
+                  </Typography>
                 </Stack>
               </Paper>
 
@@ -553,7 +567,6 @@ export default function BroadcastsPage() {
                   onClick={() => saveMessage("now")}
                   disabled={
                     submitting ||
-                    deliveryMode !== "now" ||
                     selectedContacts.length === 0 ||
                     !message.trim()
                   }
@@ -572,7 +585,6 @@ export default function BroadcastsPage() {
                   onClick={() => saveMessage("schedule")}
                   disabled={
                     submitting ||
-                    deliveryMode !== "schedule" ||
                     selectedContacts.length === 0 ||
                     !message.trim() ||
                     !scheduledAt

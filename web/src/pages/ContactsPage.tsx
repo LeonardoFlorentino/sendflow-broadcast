@@ -6,6 +6,11 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Modal,
   Paper,
   Stack,
@@ -19,7 +24,7 @@ import ErrorOutlineRoundedIcon from "@mui/icons-material/ErrorOutlineRounded";
 import SyncRoundedIcon from "@mui/icons-material/SyncRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
-import { useAuthContext } from "../hooks/useAuthContext";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import { useContacts } from "../hooks/useContacts";
 
 function formatPhone(value: string): string {
@@ -41,23 +46,34 @@ function formatPhone(value: string): string {
 }
 
 export default function ContactsPage() {
-  const { userId } = useAuthContext();
-  const { contacts, loading, error, createContact, updateContact } =
-    useContacts();
+  const {
+    contacts,
+    loading,
+    error,
+    createContact,
+    updateContact,
+    deleteContact,
+  } = useContacts();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
   const [contactName, setContactName] = useState("");
   const [contactPhone, setContactPhone] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const editingContact = useMemo(
-    () =>
-      editingContactId
-        ? (contacts.find((contact) => contact.id === editingContactId) ?? null)
-        : null,
-    [contacts, editingContactId],
+  const [deletingContactId, setDeletingContactId] = useState<string | null>(
+    null,
   );
+  const [deleteError, setDeleteError] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const deletingContact = useMemo(
+    () =>
+      deletingContactId
+        ? (contacts.find((contact) => contact.id === deletingContactId) ?? null)
+        : null,
+    [contacts, deletingContactId],
+  );
+
   const isEditing = Boolean(editingContactId);
 
   function handleOpenCreateModal() {
@@ -98,7 +114,7 @@ export default function ContactsPage() {
     }
 
     if (phoneDigits.length < 10) {
-      setSubmitError("Informe um telefone valido com DDD");
+      setSubmitError("Informe um telefone válido com DDD");
       return;
     }
 
@@ -123,10 +139,42 @@ export default function ContactsPage() {
       const message =
         submitActionError instanceof Error
           ? submitActionError.message
-          : "Nao foi possivel salvar o contato";
+          : "Não foi possível salvar o contato";
       setSubmitError(message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  function handleOpenDeleteDialog(contactId: string) {
+    setDeletingContactId(contactId);
+    setDeleteError("");
+  }
+
+  function handleCloseDeleteDialog(force = false) {
+    if (deleting && !force) return;
+    setDeletingContactId(null);
+    setDeleteError("");
+  }
+
+  async function handleConfirmDelete() {
+    if (!deletingContact) return;
+
+    setDeleting(true);
+    setDeleteError("");
+
+    try {
+      await deleteContact(deletingContact.id);
+      handleCloseDeleteDialog(true);
+    } catch (deleteActionError) {
+      console.error("Contact delete error:", deleteActionError);
+      const message =
+        deleteActionError instanceof Error
+          ? deleteActionError.message
+          : "Não foi possível excluir o contato";
+      setDeleteError(message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -178,38 +226,13 @@ export default function ContactsPage() {
                 Sua base de contatos acompanhada ao vivo.
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 600 }}>
-                Esta tela acompanha a colecao <code>contacts</code> em tempo
+                Esta tela acompanha a coleção <code>contacts</code> em tempo
                 real e lista apenas os contatos vinculados ao{" "}
-                <code>clientId</code> do usuario logado.
+                <code>clientId</code> do usuário logado.
               </Typography>
             </Box>
 
             <Stack spacing={1.5} sx={{ minWidth: { md: 260 } }}>
-              <Paper
-                elevation={0}
-                sx={{
-                  p: 2,
-                  borderRadius: 3,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  backgroundColor: "rgba(255,255,255,0.03)",
-                }}
-              >
-                <Typography variant="caption" color="text.secondary">
-                  ClientId ativo
-                </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    mt: 0.75,
-                    fontFamily: "monospace",
-                    wordBreak: "break-all",
-                  }}
-                >
-                  {userId}
-                </Typography>
-              </Paper>
-
               <Button
                 variant="contained"
                 startIcon={<AddRoundedIcon />}
@@ -386,8 +409,8 @@ export default function ContactsPage() {
                 Nenhum contato encontrado
               </Typography>
               <Typography color="text.secondary">
-                Nenhum documento com <code>clientId</code> igual a este usuario
-                foi retornado pela colecao <code>contacts</code>.
+                Nenhum documento com <code>clientId</code> igual a este usuário
+                foi retornado pela coleção <code>contacts</code>.
               </Typography>
             </Paper>
           ) : (
@@ -412,9 +435,6 @@ export default function ContactsPage() {
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
                         {contact.name || "Contato sem nome"}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        ID: {contact.id}
-                      </Typography>
                     </Box>
                     <Chip
                       label={contact.phone || "Sem telefone"}
@@ -427,36 +447,45 @@ export default function ContactsPage() {
                     />
                   </Stack>
 
-                  <Typography variant="body2" color="text.secondary">
-                    clientId: {contact.clientId}
-                  </Typography>
                   <Stack
                     direction={{ xs: "column", md: "row" }}
                     spacing={1.5}
                     sx={{ mt: 1.25, justifyContent: "space-between" }}
                   >
                     <Typography variant="body2" color="text.secondary">
-                      Telefone: {contact.phone || "Nao informado"}
+                      Telefone: {contact.phone || "Não informado"}
                     </Typography>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<EditRoundedIcon />}
-                      onClick={() =>
-                        handleOpenEditModal(
-                          contact.id,
-                          contact.name,
-                          contact.phone,
-                        )
-                      }
-                      sx={{
-                        alignSelf: { xs: "flex-start", md: "center" },
-                        borderRadius: 2,
-                        fontWeight: 700,
-                      }}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{ alignSelf: { xs: "flex-start", md: "center" } }}
                     >
-                      Editar
-                    </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<EditRoundedIcon />}
+                        onClick={() =>
+                          handleOpenEditModal(
+                            contact.id,
+                            contact.name,
+                            contact.phone,
+                          )
+                        }
+                        sx={{ borderRadius: 2, fontWeight: 700 }}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        color="error"
+                        startIcon={<DeleteOutlineRoundedIcon />}
+                        onClick={() => handleOpenDeleteDialog(contact.id)}
+                        sx={{ borderRadius: 2, fontWeight: 700 }}
+                      >
+                        Excluir
+                      </Button>
+                    </Stack>
                   </Stack>
                 </Box>
               ))}
@@ -524,20 +553,6 @@ export default function ContactsPage() {
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              <TextField
-                fullWidth
-                label="ClientId"
-                value={userId ?? ""}
-                disabled
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
-              />
-
-              {isEditing && editingContact && (
-                <Typography variant="caption" color="text.secondary">
-                  Editando o documento {editingContact.id}
-                </Typography>
-              )}
-
               <Stack
                 direction="row"
                 spacing={1.5}
@@ -564,13 +579,75 @@ export default function ContactsPage() {
                     boxShadow: "0 12px 22px rgba(168, 85, 247, 0.25)",
                   }}
                 >
-                  {isEditing ? "Salvar alteracoes" : "Criar contato"}
+                  {isEditing ? "Salvar alterações" : "Criar contato"}
                 </Button>
               </Stack>
             </Stack>
           </Paper>
         </Box>
       </Modal>
+
+      <Dialog
+        open={Boolean(deletingContactId)}
+        onClose={() => handleCloseDeleteDialog()}
+        slotProps={{
+          paper: {
+            elevation: 0,
+            sx: {
+              borderRadius: 4,
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "rgba(20, 21, 30, 0.96)",
+              backdropFilter: "blur(16px)",
+              backgroundImage: "none",
+              minWidth: { xs: "calc(100% - 32px)", sm: 440 },
+            },
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 1, fontWeight: 700 }}>
+          Confirmar exclusão
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <DialogContentText sx={{ color: "text.secondary" }}>
+              {deletingContact
+                ? `Tem certeza que deseja excluir o contato "${deletingContact.name || "Sem nome"}"?`
+                : "Tem certeza que deseja excluir este contato?"}
+            </DialogContentText>
+            <DialogContentText sx={{ color: "text.secondary" }}>
+              Esta ação remove o documento da coleção <code>contacts</code> e
+              não pode ser desfeita.
+            </DialogContentText>
+            {deleteError && <Alert severity="error">{deleteError}</Alert>}
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button
+            onClick={() => handleCloseDeleteDialog()}
+            disabled={deleting}
+            sx={{ fontWeight: 700 }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleConfirmDelete}
+            color="error"
+            variant="contained"
+            disabled={deleting}
+            startIcon={
+              deleting ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <DeleteOutlineRoundedIcon />
+              )
+            }
+            sx={{ borderRadius: 2.2, fontWeight: 700 }}
+          >
+            Excluir contato
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

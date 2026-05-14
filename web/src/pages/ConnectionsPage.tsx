@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Alert,
   Avatar,
@@ -29,6 +32,15 @@ import { useConnections } from "../hooks/useConnections";
 import { translateError, useErrorHandler } from "../lib/errors";
 import { ListSkeleton } from "../components/ListSkeleton";
 
+const connectionSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Informe um nome com pelo menos 2 caracteres"),
+});
+
+type ConnectionFormData = z.infer<typeof connectionSchema>;
+
 export default function ConnectionsPage() {
   const {
     connections,
@@ -46,11 +58,19 @@ export default function ConnectionsPage() {
   const [deletingConnectionId, setDeletingConnectionId] = useState<
     string | null
   >(null);
-  const [connectionName, setConnectionName] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [deleteError, setDeleteError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+
+  const {
+    register,
+    handleSubmit: rhfHandleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ConnectionFormData>({
+    resolver: zodResolver(connectionSchema),
+    defaultValues: { name: "" },
+  });
 
   const activeConnections = connections.filter(
     (connection) => connection.status?.toLowerCase() === "connected",
@@ -68,23 +88,23 @@ export default function ConnectionsPage() {
 
   function handleOpenCreateModal() {
     setEditingConnectionId(null);
-    setConnectionName("");
+    reset({ name: "" });
     setSubmitError("");
     setModalOpen(true);
   }
 
   function handleOpenEditModal(connectionId: string, name?: string) {
     setEditingConnectionId(connectionId);
-    setConnectionName(name ?? "");
+    reset({ name: name ?? "" });
     setSubmitError("");
     setModalOpen(true);
   }
 
   function handleCloseModal(force = false) {
-    if (saving && !force) return;
+    if (isSubmitting && !force) return;
     setModalOpen(false);
     setEditingConnectionId(null);
-    setConnectionName("");
+    reset({ name: "" });
     setSubmitError("");
   }
 
@@ -99,24 +119,14 @@ export default function ConnectionsPage() {
     setDeleteError("");
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    const trimmedName = connectionName.trim();
-    if (trimmedName.length < 2) {
-      setSubmitError("Informe um nome com pelo menos 2 caracteres");
-      return;
-    }
-
-    setSaving(true);
+  async function onSubmit(data: ConnectionFormData) {
     setSubmitError("");
-
     try {
       if (editingConnectionId) {
-        await updateConnection(editingConnectionId, trimmedName);
+        await updateConnection(editingConnectionId, data.name);
         showSuccess("Conexão atualizada com sucesso");
       } else {
-        await createConnection(trimmedName);
+        await createConnection(data.name);
         showSuccess("Conexão criada com sucesso");
       }
 
@@ -125,8 +135,6 @@ export default function ConnectionsPage() {
       const appError = translateError(submitActionError);
       console.error("Connection submit error:", appError.code, appError.originalError);
       setSubmitError(appError.userMessage);
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -487,7 +495,7 @@ export default function ConnectionsPage() {
         >
           <Paper
             component="form"
-            onSubmit={handleSubmit}
+            onSubmit={rhfHandleSubmit(onSubmit)}
             elevation={0}
             sx={{
               p: { xs: 3, md: 3.5 },
@@ -515,10 +523,11 @@ export default function ConnectionsPage() {
               <TextField
                 fullWidth
                 label="Nome da conexão"
-                value={connectionName}
-                onChange={(e) => setConnectionName(e.target.value)}
-                disabled={saving}
+                disabled={isSubmitting}
                 autoFocus
+                error={Boolean(errors.name)}
+                helperText={errors.name?.message}
+                {...register("name")}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
@@ -530,7 +539,7 @@ export default function ConnectionsPage() {
                 <Button
                   variant="text"
                   onClick={() => handleCloseModal()}
-                  disabled={saving}
+                  disabled={isSubmitting}
                   sx={{ fontWeight: 700 }}
                 >
                   Cancelar
@@ -538,9 +547,9 @@ export default function ConnectionsPage() {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={saving}
+                  disabled={isSubmitting}
                   startIcon={
-                    saving ? <CircularProgress size={18} /> : undefined
+                    isSubmitting ? <CircularProgress size={18} /> : undefined
                   }
                   sx={{
                     borderRadius: 2.2,

@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Box,
   Button,
@@ -17,72 +20,62 @@ import { useNavigate } from "react-router-dom";
 import { translateError } from "../lib/errors";
 import { PasswordField } from "./PasswordField";
 
+const signUpSchema = z
+  .object({
+    displayName: z
+      .string()
+      .min(1, "Nome é obrigatório")
+      .min(2, "Nome deve ter no mínimo 2 caracteres"),
+    email: z.string().min(1, "Email é obrigatório").email("Email inválido"),
+    password: z
+      .string()
+      .min(1, "Senha é obrigatória")
+      .min(6, "Senha deve ter no mínimo 6 caracteres"),
+    confirmPassword: z.string().min(1, "Confirme sua senha"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Senhas não correspondem",
+    path: ["confirmPassword"],
+  });
+
+type SignUpFormData = z.infer<typeof signUpSchema>;
+
 interface SignUpFormProps {
   onSwitchToLogin: () => void;
 }
 
 export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [submitError, setSubmitError] = useState("");
   const { signUp } = useAuthContext();
   const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: {
+      displayName: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
+  });
 
-  const validateForm = (): boolean => {
-    if (!displayName.trim()) {
-      setError("Nome é obrigatório");
-      return false;
-    }
-    if (displayName.trim().length < 2) {
-      setError("Nome deve ter no mínimo 2 caracteres");
-      return false;
-    }
-    if (!email.trim()) {
-      setError("Email é obrigatório");
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Email inválido");
-      return false;
-    }
-    if (!password) {
-      setError("Senha é obrigatória");
-      return false;
-    }
-    if (password.length < 6) {
-      setError("Senha deve ter no mínimo 6 caracteres");
-      return false;
-    }
-    if (password !== confirmPassword) {
-      setError("Senhas não correspondem");
-      return false;
-    }
-    setError("");
-    return true;
-  };
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!validateForm()) return;
-
-    setLoading(true);
+  async function onSubmit(data: SignUpFormData) {
+    setSubmitError("");
     try {
-      await signUp(email, password, displayName);
+      await signUp(data.email, data.password, data.displayName);
       navigate("/");
     } catch (err: unknown) {
       const appError = translateError(err);
       console.error("Sign up error:", appError.code, appError.originalError);
-      setError(appError.userMessage);
-    } finally {
-      setLoading(false);
+      setSubmitError(appError.userMessage);
     }
   }
 
   return (
-    <Box component="form" onSubmit={handleSubmit} className="w-full">
+    <Box component="form" onSubmit={handleSubmit(onSubmit)} className="w-full">
       <Box sx={{ mb: 3 }}>
         <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700 }}>
           Criar conta
@@ -93,15 +86,16 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
       </Box>
 
       <Stack spacing={2.5}>
-        {error && <Alert severity="error">{error}</Alert>}
+        {submitError && <Alert severity="error">{submitError}</Alert>}
 
         <TextField
           fullWidth
           label="Nome completo"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          disabled={loading}
+          disabled={isSubmitting}
           autoComplete="name"
+          error={Boolean(errors.displayName)}
+          helperText={errors.displayName?.message}
+          {...register("displayName")}
           slotProps={{
             input: {
               endAdornment: (
@@ -118,10 +112,11 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           fullWidth
           label="Email"
           type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          disabled={loading}
+          disabled={isSubmitting}
           autoComplete="email"
+          error={Boolean(errors.email)}
+          helperText={errors.email?.message}
+          {...register("email")}
           slotProps={{
             input: {
               endAdornment: (
@@ -137,21 +132,22 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
         <PasswordField
           fullWidth
           label="Senha"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          disabled={loading}
+          disabled={isSubmitting}
           autoComplete="new-password"
-          helperText="Mínimo 6 caracteres"
+          error={Boolean(errors.password)}
+          helperText={errors.password?.message ?? "Mínimo 6 caracteres"}
+          {...register("password")}
           sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
         />
 
         <PasswordField
           fullWidth
           label="Confirmar senha"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          disabled={loading}
+          disabled={isSubmitting}
           autoComplete="new-password"
+          error={Boolean(errors.confirmPassword)}
+          helperText={errors.confirmPassword?.message}
+          {...register("confirmPassword")}
           sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
         />
 
@@ -159,7 +155,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
           fullWidth
           variant="contained"
           type="submit"
-          disabled={loading}
+          disabled={isSubmitting}
           size="large"
           sx={{
             mt: 0.5,
@@ -169,7 +165,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
             boxShadow: "0 12px 22px rgba(168, 85, 247, 0.25)",
           }}
         >
-          {loading ? <CircularProgress size={24} /> : "Cadastrar"}
+          {isSubmitting ? <CircularProgress size={24} /> : "Cadastrar"}
         </Button>
 
         <Box className="text-center">

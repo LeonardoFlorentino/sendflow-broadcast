@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Alert,
   Avatar,
@@ -47,6 +50,21 @@ function formatPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+const contactSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, "Informe um nome com pelo menos 2 caracteres"),
+  phone: z
+    .string()
+    .refine(
+      (value) => value.replace(/\D/g, "").length >= 10,
+      "Informe um telefone válido com DDD",
+    ),
+});
+
+type ContactFormData = z.infer<typeof contactSchema>;
+
 export default function ContactsPage() {
   const {
     contacts,
@@ -58,10 +76,7 @@ export default function ContactsPage() {
   } = useContacts();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingContactId, setEditingContactId] = useState<string | null>(null);
-  const [contactName, setContactName] = useState("");
-  const [contactPhone, setContactPhone] = useState("");
   const [submitError, setSubmitError] = useState("");
-  const [saving, setSaving] = useState(false);
   const [deletingContactId, setDeletingContactId] = useState<string | null>(
     null,
   );
@@ -69,6 +84,17 @@ export default function ContactsPage() {
   const [deleting, setDeleting] = useState(false);
 
   const { showSuccess } = useErrorHandler();
+
+  const {
+    control,
+    register,
+    handleSubmit: rhfHandleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ContactFormData>({
+    resolver: zodResolver(contactSchema),
+    defaultValues: { name: "", phone: "" },
+  });
 
   const deletingContact = useMemo(
     () =>
@@ -82,54 +108,30 @@ export default function ContactsPage() {
 
   function handleOpenCreateModal() {
     setEditingContactId(null);
-    setContactName("");
-    setContactPhone("");
+    reset({ name: "", phone: "" });
     setSubmitError("");
     setModalOpen(true);
   }
 
   function handleOpenEditModal(contactId: string, name: string, phone: string) {
     setEditingContactId(contactId);
-    setContactName(name);
-    setContactPhone(formatPhone(phone));
+    reset({ name, phone: formatPhone(phone) });
     setSubmitError("");
     setModalOpen(true);
   }
 
   function handleCloseModal(force = false) {
-    if (saving && !force) return;
+    if (isSubmitting && !force) return;
     setModalOpen(false);
     setEditingContactId(null);
-    setContactName("");
-    setContactPhone("");
+    reset({ name: "", phone: "" });
     setSubmitError("");
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    const trimmedName = contactName.trim();
-    const trimmedPhone = contactPhone.trim();
-    const phoneDigits = trimmedPhone.replace(/\D/g, "");
-
-    if (trimmedName.length < 2) {
-      setSubmitError("Informe um nome com pelo menos 2 caracteres");
-      return;
-    }
-
-    if (phoneDigits.length < 10) {
-      setSubmitError("Informe um telefone válido com DDD");
-      return;
-    }
-
-    setSaving(true);
+  async function onSubmit(data: ContactFormData) {
     setSubmitError("");
-
     try {
-      const payload = {
-        name: trimmedName,
-        phone: trimmedPhone,
-      };
+      const payload = { name: data.name, phone: data.phone.trim() };
 
       if (editingContactId) {
         await updateContact(editingContactId, payload);
@@ -144,8 +146,6 @@ export default function ContactsPage() {
       const appError = translateError(submitActionError);
       console.error("Contact submit error:", appError.code, appError.originalError);
       setSubmitError(appError.userMessage);
-    } finally {
-      setSaving(false);
     }
   }
 
@@ -503,7 +503,7 @@ export default function ContactsPage() {
         >
           <Paper
             component="form"
-            onSubmit={handleSubmit}
+            onSubmit={rhfHandleSubmit(onSubmit)}
             elevation={0}
             sx={{
               p: { xs: 3, md: 3.5 },
@@ -532,21 +532,33 @@ export default function ContactsPage() {
               <TextField
                 fullWidth
                 label="Nome do contato"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-                disabled={saving}
+                disabled={isSubmitting}
                 autoFocus
+                error={Boolean(errors.name)}
+                helperText={errors.name?.message}
+                {...register("name")}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              <TextField
-                fullWidth
-                label="Telefone"
-                value={contactPhone}
-                onChange={(e) => setContactPhone(formatPhone(e.target.value))}
-                disabled={saving}
-                placeholder="(11) 99999-9999"
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
+              <Controller
+                name="phone"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    fullWidth
+                    label="Telefone"
+                    value={field.value}
+                    onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                    onBlur={field.onBlur}
+                    name={field.name}
+                    inputRef={field.ref}
+                    disabled={isSubmitting}
+                    placeholder="(11) 99999-9999"
+                    error={Boolean(errors.phone)}
+                    helperText={errors.phone?.message}
+                    sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
+                  />
+                )}
               />
 
               <Stack
@@ -557,7 +569,7 @@ export default function ContactsPage() {
                 <Button
                   variant="text"
                   onClick={() => handleCloseModal()}
-                  disabled={saving}
+                  disabled={isSubmitting}
                   sx={{ fontWeight: 700 }}
                 >
                   Cancelar
@@ -565,9 +577,9 @@ export default function ContactsPage() {
                 <Button
                   type="submit"
                   variant="contained"
-                  disabled={saving}
+                  disabled={isSubmitting}
                   startIcon={
-                    saving ? <CircularProgress size={18} /> : undefined
+                    isSubmitting ? <CircularProgress size={18} /> : undefined
                   }
                   sx={{
                     borderRadius: 2.2,

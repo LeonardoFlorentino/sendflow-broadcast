@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Alert,
   Avatar,
@@ -46,6 +49,24 @@ function formatScheduledAt(value: Date | null): string {
   return dayjs(value).format("DD/MM/YYYY HH:mm");
 }
 
+const messageEditSchema = z
+  .object({
+    content: z.string().trim().min(1, "Escreva o conteúdo da mensagem"),
+    contactIds: z
+      .array(z.string())
+      .min(1, "Selecione pelo menos um contato"),
+    scheduledDate: z.custom<Dayjs>(
+      (v) => dayjs.isDayjs(v) && (v as Dayjs).isValid(),
+      "Defina a data do agendamento",
+    ),
+    scheduledTime: z.custom<Dayjs>(
+      (v) => dayjs.isDayjs(v) && (v as Dayjs).isValid(),
+      "Defina o horário do agendamento",
+    ),
+  });
+
+type MessageEditFormData = z.infer<typeof messageEditSchema>;
+
 export default function MessagesHistoryPage() {
   const [status, setStatus] = useState<MessageHistoryStatus>("scheduled");
   const { messages, loading, error } = useMessagesHistory(status);
@@ -55,25 +76,26 @@ export default function MessagesHistoryPage() {
 
   const [editingMessage, setEditingMessage] =
     useState<MessageHistoryItem | null>(null);
-  const [editContent, setEditContent] = useState("");
-  const [editScheduledDate, setEditScheduledDate] = useState<Dayjs | null>(
-    null,
-  );
-  const [editScheduledTime, setEditScheduledTime] = useState<Dayjs | null>(
-    null,
-  );
-
-  const editScheduledAt =
-    editScheduledDate && editScheduledTime
-      ? editScheduledDate
-          .hour(editScheduledTime.hour())
-          .minute(editScheduledTime.minute())
-          .second(0)
-          .millisecond(0)
-      : null;
-  const [editContactIds, setEditContactIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
-  const [savingEdit, setSavingEdit] = useState(false);
+
+  const {
+    control,
+    register,
+    handleSubmit: rhfHandleSubmit,
+    reset: resetEditForm,
+    setValue: setEditValue,
+    formState: { errors: editErrors, isSubmitting: savingEdit },
+  } = useForm<MessageEditFormData>({
+    resolver: zodResolver(messageEditSchema),
+    defaultValues: {
+      content: "",
+      contactIds: [],
+      scheduledDate: null as unknown as Dayjs,
+      scheduledTime: null as unknown as Dayjs,
+    },
+  });
+
+  const editContactIds = useWatch({ control, name: "contactIds" }) ?? [];
 
   const [deletingMessage, setDeletingMessage] =
     useState<MessageHistoryItem | null>(null);
@@ -86,61 +108,54 @@ export default function MessagesHistoryPage() {
   );
 
   function handleOpenEdit(message: MessageHistoryItem) {
-    setEditingMessage(message);
-    setEditContent(message.content);
     const initial = message.scheduledAt
       ? dayjs(message.scheduledAt.toDate())
       : dayjs();
-    setEditScheduledDate(initial);
-    setEditScheduledTime(initial);
-    setEditContactIds(message.contactIds);
+    setEditingMessage(message);
+    resetEditForm({
+      content: message.content,
+      contactIds: message.contactIds,
+      scheduledDate: initial,
+      scheduledTime: initial,
+    });
     setEditError("");
   }
 
   function handleCloseEdit(force = false) {
     if (savingEdit && !force) return;
     setEditingMessage(null);
-    setEditContent("");
-    setEditScheduledDate(null);
-    setEditScheduledTime(null);
-    setEditContactIds([]);
+    resetEditForm({
+      content: "",
+      contactIds: [],
+      scheduledDate: null as unknown as Dayjs,
+      scheduledTime: null as unknown as Dayjs,
+    });
     setEditError("");
   }
 
   function toggleEditContact(contactId: string) {
-    setEditContactIds((current) =>
-      current.includes(contactId)
-        ? current.filter((id) => id !== contactId)
-        : [...current, contactId],
-    );
+    const current = editContactIds ?? [];
+    const next = current.includes(contactId)
+      ? current.filter((id) => id !== contactId)
+      : [...current, contactId];
+    setEditValue("contactIds", next, { shouldValidate: true });
   }
 
-  async function handleSaveEdit() {
+  async function onEditSubmit(data: MessageEditFormData) {
     if (!editingMessage) return;
-
-    if (editContactIds.length === 0) {
-      setEditError("Selecione pelo menos um contato");
-      return;
-    }
-
-    if (!editContent.trim()) {
-      setEditError("Escreva o conteúdo da mensagem");
-      return;
-    }
-
-    if (!editScheduledAt) {
-      setEditError("Defina a data e o horário do agendamento");
-      return;
-    }
-
-    setSavingEdit(true);
     setEditError("");
+
+    const scheduledAt = data.scheduledDate
+      .hour(data.scheduledTime.hour())
+      .minute(data.scheduledTime.minute())
+      .second(0)
+      .millisecond(0);
 
     try {
       await updateMessage(editingMessage.id, {
-        contactIds: editContactIds,
-        content: editContent,
-        scheduledAt: editScheduledAt.toDate(),
+        contactIds: data.contactIds,
+        content: data.content,
+        scheduledAt: scheduledAt.toDate(),
       });
       showSuccess("Mensagem atualizada com sucesso");
       handleCloseEdit(true);
@@ -148,8 +163,6 @@ export default function MessagesHistoryPage() {
       const appError = translateError(updateError);
       console.error("Message update error:", appError.code, appError.originalError);
       setEditError(appError.userMessage);
-    } finally {
-      setSavingEdit(false);
     }
   }
 
@@ -512,6 +525,8 @@ export default function MessagesHistoryPage() {
           }}
         >
           <Paper
+            component="form"
+            onSubmit={rhfHandleSubmit(onEditSubmit)}
             elevation={0}
             sx={{
               p: { xs: 3, md: 3.5 },
@@ -542,9 +557,10 @@ export default function MessagesHistoryPage() {
                 multiline
                 minRows={5}
                 label="Mensagem"
-                value={editContent}
-                onChange={(event) => setEditContent(event.target.value)}
                 disabled={savingEdit}
+                error={Boolean(editErrors.content)}
+                helperText={editErrors.content?.message}
+                {...register("content")}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
@@ -552,46 +568,69 @@ export default function MessagesHistoryPage() {
                 direction={{ xs: "column", sm: "row" }}
                 spacing={1.5}
               >
-                <DatePicker
-                  label="Data"
-                  value={editScheduledDate}
-                  onChange={(value) => setEditScheduledDate(value)}
-                  disabled={savingEdit}
-                  minDate={dayjs().startOf("day")}
-                  format="DD/MM/YYYY"
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      sx: {
-                        "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
-                        "& .MuiPickersSectionList-root": { cursor: "text" },
-                      },
-                    },
-                  }}
+                <Controller
+                  name="scheduledDate"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <DatePicker
+                      label="Data"
+                      value={field.value ?? null}
+                      onChange={(value) => field.onChange(value)}
+                      disabled={savingEdit}
+                      minDate={dayjs().startOf("day")}
+                      format="DD/MM/YYYY"
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          onBlur: field.onBlur,
+                          error: Boolean(fieldState.error),
+                          helperText: fieldState.error?.message,
+                          sx: {
+                            "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
+                            "& .MuiPickersSectionList-root": { cursor: "text" },
+                          },
+                        },
+                      }}
+                    />
+                  )}
                 />
-                <TimePicker
-                  label="Horário"
-                  value={editScheduledTime}
-                  onChange={(value) => setEditScheduledTime(value)}
-                  disabled={savingEdit}
-                  ampm={false}
-                  format="HH:mm"
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      sx: {
-                        "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
-                        "& .MuiPickersSectionList-root": { cursor: "text" },
-                      },
-                    },
-                  }}
+                <Controller
+                  name="scheduledTime"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <TimePicker
+                      label="Horário"
+                      value={field.value ?? null}
+                      onChange={(value) => field.onChange(value)}
+                      disabled={savingEdit}
+                      ampm={false}
+                      format="HH:mm"
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          onBlur: field.onBlur,
+                          error: Boolean(fieldState.error),
+                          helperText: fieldState.error?.message,
+                          sx: {
+                            "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
+                            "& .MuiPickersSectionList-root": { cursor: "text" },
+                          },
+                        },
+                      }}
+                    />
+                  )}
                 />
               </Stack>
 
               <Box>
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>
-                  Destinatários ({editContactIds.length})
+                  Destinatários ({editContactIds?.length ?? 0})
                 </Typography>
+                {editErrors.contactIds && (
+                  <Typography variant="caption" color="error" sx={{ mb: 1, display: "block" }}>
+                    {editErrors.contactIds.message}
+                  </Typography>
+                )}
                 {contacts.length === 0 ? (
                   <Typography variant="body2" color="text.secondary">
                     Nenhum contato disponível para seleção.
@@ -684,8 +723,8 @@ export default function MessagesHistoryPage() {
                   Cancelar
                 </Button>
                 <Button
+                  type="submit"
                   variant="contained"
-                  onClick={handleSaveEdit}
                   disabled={savingEdit}
                   startIcon={
                     savingEdit ? <CircularProgress size={18} /> : undefined

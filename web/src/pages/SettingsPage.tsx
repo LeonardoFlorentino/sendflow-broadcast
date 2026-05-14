@@ -1,4 +1,7 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Alert,
   Box,
@@ -16,86 +19,84 @@ import { useAuthContext } from "../hooks/useAuthContext";
 import { translateError, useErrorHandler } from "../lib/errors";
 import { PasswordField } from "../components/PasswordField";
 
+const profileSchema = z.object({
+  displayName: z
+    .string()
+    .trim()
+    .min(2, "Informe um nome com pelo menos 2 caracteres"),
+});
+
+type ProfileFormData = z.infer<typeof profileSchema>;
+
+const passwordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Informe sua senha atual"),
+    newPassword: z
+      .string()
+      .min(6, "A nova senha deve ter no mínimo 6 caracteres"),
+    confirmNewPassword: z.string().min(1, "Confirme a nova senha"),
+  })
+  .refine((data) => data.newPassword === data.confirmNewPassword, {
+    message: "A confirmação da nova senha não confere",
+    path: ["confirmNewPassword"],
+  })
+  .refine((data) => data.currentPassword !== data.newPassword, {
+    message: "A nova senha deve ser diferente da senha atual",
+    path: ["newPassword"],
+  });
+
+type PasswordFormData = z.infer<typeof passwordSchema>;
+
 export default function SettingsPage() {
   const { user, updateDisplayName, updatePasswordWithConfirmation } =
     useAuthContext();
-  const [displayName, setDisplayName] = useState(user?.displayName ?? "");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const { showSuccess } = useErrorHandler();
   const [profileError, setProfileError] = useState("");
   const [passwordError, setPasswordError] = useState("");
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [savingPassword, setSavingPassword] = useState(false);
-  const { showSuccess } = useErrorHandler();
 
-  async function handleProfileSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  const profileForm = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { displayName: user?.displayName ?? "" },
+  });
 
-    const trimmedName = displayName.trim();
-    if (trimmedName.length < 2) {
-      setProfileError("Informe um nome com pelo menos 2 caracteres");
-      return;
-    }
+  const passwordForm = useForm<PasswordFormData>({
+    resolver: zodResolver(passwordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    },
+  });
 
-    setSavingProfile(true);
+  async function onProfileSubmit(data: ProfileFormData) {
     setProfileError("");
-
     try {
-      await updateDisplayName(trimmedName);
+      await updateDisplayName(data.displayName);
       showSuccess("Nome atualizado com sucesso");
     } catch (error) {
       const appError = translateError(error);
       console.error("Profile update error:", appError.code, appError.originalError);
       setProfileError(appError.userMessage);
-    } finally {
-      setSavingProfile(false);
     }
   }
 
-  async function handlePasswordSubmit(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (!currentPassword) {
-      setPasswordError("Informe sua senha atual");
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      setPasswordError("A nova senha deve ter no mínimo 6 caracteres");
-      return;
-    }
-
-    if (newPassword !== confirmNewPassword) {
-      setPasswordError("A confirmação da nova senha não confere");
-      return;
-    }
-
-    if (currentPassword === newPassword) {
-      setPasswordError("A nova senha deve ser diferente da senha atual");
-      return;
-    }
-
-    setSavingPassword(true);
+  async function onPasswordSubmit(data: PasswordFormData) {
     setPasswordError("");
-
     try {
-      await updatePasswordWithConfirmation(currentPassword, newPassword);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmNewPassword("");
+      await updatePasswordWithConfirmation(
+        data.currentPassword,
+        data.newPassword,
+      );
+      passwordForm.reset();
       showSuccess("Senha alterada com sucesso");
     } catch (error: unknown) {
       const appError = translateError(error);
       console.error("Password update error:", appError.code, appError.originalError);
-      // Para troca de senha, "credenciais inválidas" significa senha atual incorreta
       const message =
         appError.code === "auth/invalid_credentials"
           ? "A senha atual está incorreta."
           : appError.userMessage;
       setPasswordError(message);
-    } finally {
-      setSavingPassword(false);
     }
   }
 
@@ -159,7 +160,7 @@ export default function SettingsPage() {
           <Paper
             elevation={0}
             component="form"
-            onSubmit={handleProfileSubmit}
+            onSubmit={profileForm.handleSubmit(onProfileSubmit)}
             sx={{
               p: { xs: 3, md: 3.5 },
               borderRadius: 4,
@@ -185,10 +186,11 @@ export default function SettingsPage() {
               <TextField
                 fullWidth
                 label="Nome completo"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                disabled={savingProfile}
+                disabled={profileForm.formState.isSubmitting}
                 autoComplete="name"
+                error={Boolean(profileForm.formState.errors.displayName)}
+                helperText={profileForm.formState.errors.displayName?.message}
+                {...profileForm.register("displayName")}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
@@ -204,7 +206,7 @@ export default function SettingsPage() {
                 type="submit"
                 variant="contained"
                 startIcon={<SaveRoundedIcon />}
-                disabled={savingProfile}
+                disabled={profileForm.formState.isSubmitting}
                 sx={{
                   alignSelf: "flex-start",
                   py: 1.2,
@@ -222,7 +224,7 @@ export default function SettingsPage() {
           <Paper
             elevation={0}
             component="form"
-            onSubmit={handlePasswordSubmit}
+            onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
             sx={{
               p: { xs: 3, md: 3.5 },
               borderRadius: 4,
@@ -248,31 +250,40 @@ export default function SettingsPage() {
               <PasswordField
                 fullWidth
                 label="Senha atual"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                disabled={savingPassword}
+                disabled={passwordForm.formState.isSubmitting}
                 autoComplete="current-password"
+                error={Boolean(passwordForm.formState.errors.currentPassword)}
+                helperText={
+                  passwordForm.formState.errors.currentPassword?.message
+                }
+                {...passwordForm.register("currentPassword")}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
               <PasswordField
                 fullWidth
                 label="Nova senha"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                disabled={savingPassword}
+                disabled={passwordForm.formState.isSubmitting}
                 autoComplete="new-password"
-                helperText="Mínimo de 6 caracteres"
+                error={Boolean(passwordForm.formState.errors.newPassword)}
+                helperText={
+                  passwordForm.formState.errors.newPassword?.message ??
+                  "Mínimo de 6 caracteres"
+                }
+                {...passwordForm.register("newPassword")}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
               <PasswordField
                 fullWidth
                 label="Confirmar nova senha"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                disabled={savingPassword}
+                disabled={passwordForm.formState.isSubmitting}
                 autoComplete="new-password"
+                error={Boolean(passwordForm.formState.errors.confirmNewPassword)}
+                helperText={
+                  passwordForm.formState.errors.confirmNewPassword?.message
+                }
+                {...passwordForm.register("confirmNewPassword")}
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
@@ -280,7 +291,7 @@ export default function SettingsPage() {
                 type="submit"
                 variant="outlined"
                 startIcon={<LockResetRoundedIcon />}
-                disabled={savingPassword}
+                disabled={passwordForm.formState.isSubmitting}
                 sx={{
                   alignSelf: "flex-start",
                   py: 1.2,

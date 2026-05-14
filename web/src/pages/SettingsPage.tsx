@@ -185,7 +185,7 @@ export default function SettingsPage() {
           >
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h5" fontWeight={700} sx={{ mb: 0.75 }}>
+                <Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700 }}>
                   Nome do usuário
                 </Typography>
                 <Typography color="text.secondary" variant="body2">
@@ -251,7 +251,7 @@ export default function SettingsPage() {
           >
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h5" fontWeight={700} sx={{ mb: 0.75 }}>
+                <Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700 }}>
                   Alterar senha
                 </Typography>
                 <Typography color="text.secondary" variant="body2">

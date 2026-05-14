@@ -54,7 +54,7 @@ export default function ContactsPage() {
   const editingContact = useMemo(
     () =>
       editingContactId
-        ? contacts.find((contact) => contact.id === editingContactId) ?? null
+        ? (contacts.find((contact) => contact.id === editingContactId) ?? null)
         : null,
     [contacts, editingContactId],
   );
@@ -157,7 +157,7 @@ export default function ContactsPage() {
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={3}
-            justifyContent="space-between"
+            sx={{ justifyContent: "space-between" }}
           >
             <Box sx={{ maxWidth: 680 }}>
               <Chip
@@ -200,7 +200,11 @@ export default function ContactsPage() {
                 </Typography>
                 <Typography
                   variant="body2"
-                  sx={{ mt: 0.75, fontFamily: "monospace", wordBreak: "break-all" }}
+                  sx={{
+                    mt: 0.75,
+                    fontFamily: "monospace",
+                    wordBreak: "break-all",
+                  }}
                 >
                   {userId}
                 </Typography>
@@ -250,14 +254,13 @@ export default function ContactsPage() {
             {
               label: "Estado do listener",
               value: loading ? "Sync" : error ? "Erro" : "Live",
-              icon:
-                loading ? (
-                  <SyncRoundedIcon />
-                ) : error ? (
-                  <ErrorOutlineRoundedIcon />
-                ) : (
-                  <PersonRoundedIcon />
-                ),
+              icon: loading ? (
+                <SyncRoundedIcon />
+              ) : error ? (
+                <ErrorOutlineRoundedIcon />
+              ) : (
+                <PersonRoundedIcon />
+              ),
               tint: error
                 ? "rgba(248, 113, 113, 0.16)"
                 : "rgba(192, 132, 252, 0.16)",
@@ -314,9 +317,8 @@ export default function ContactsPage() {
         >
           <Stack
             direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
             spacing={2}
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, justifyContent: "space-between" }}
           >
             <Box>
               <Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700 }}>
@@ -342,7 +344,7 @@ export default function ContactsPage() {
           </Stack>
 
           {loading ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
+            <Stack spacing={2} sx={{ py: 6, alignItems: "center" }}>
               <CircularProgress />
               <Typography color="text.secondary">
                 Carregando contatos em tempo real...
@@ -359,7 +361,11 @@ export default function ContactsPage() {
                 backgroundColor: "rgba(248, 113, 113, 0.06)",
               }}
             >
-              <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ alignItems: "center" }}
+              >
                 <ErrorOutlineRoundedIcon sx={{ color: "#fca5a5" }} />
                 <Typography>{error}</Typography>
               </Stack>
@@ -399,9 +405,8 @@ export default function ContactsPage() {
                 >
                   <Stack
                     direction={{ xs: "column", md: "row" }}
-                    justifyContent="space-between"
                     spacing={1.5}
-                    sx={{ mb: 1 }}
+                    sx={{ mb: 1, justifyContent: "space-between" }}
                   >
                     <Box>
                       <Typography variant="body1" sx={{ fontWeight: 700 }}>
@@ -427,9 +432,8 @@ export default function ContactsPage() {
                   </Typography>
                   <Stack
                     direction={{ xs: "column", md: "row" }}
-                    justifyContent="space-between"
                     spacing={1.5}
-                    sx={{ mt: 1.25 }}
+                    sx={{ mt: 1.25, justifyContent: "space-between" }}
                   >
                     <Typography variant="body2" color="text.secondary">
                       Telefone: {contact.phone || "Nao informado"}
@@ -492,8 +496,9 @@ export default function ContactsPage() {
                   {isEditing ? "Editar contato" : "Novo contato"}
                 </Typography>
                 <Typography color="text.secondary" variant="body2">
-                  Cada contato salva apenas <code>name</code>, <code>phone</code>{" "}
-                  e <code>clientId</code>, mantendo o isolamento por cliente.
+                  Cada contato salva apenas <code>name</code>,{" "}
+                  <code>phone</code> e <code>clientId</code>, mantendo o
+                  isolamento por cliente.
                 </Typography>
               </Box>
 
@@ -533,7 +538,11 @@ export default function ContactsPage() {
                 </Typography>
               )}
 
-              <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ justifyContent: "flex-end" }}
+              >
                 <Button
                   variant="text"
                   onClick={() => handleCloseModal()}
@@ -546,7 +555,9 @@ export default function ContactsPage() {
                   type="submit"
                   variant="contained"
                   disabled={saving}
-                  startIcon={saving ? <CircularProgress size={18} /> : undefined}
+                  startIcon={
+                    saving ? <CircularProgress size={18} /> : undefined
+                  }
                   sx={{
                     borderRadius: 2.2,
                     fontWeight: 700,

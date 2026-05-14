@@ -14,7 +14,7 @@ import PersonOutlineRoundedIcon from "@mui/icons-material/PersonOutlineRounded";
 import MailOutlineRoundedIcon from "@mui/icons-material/MailOutlineRounded";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import { FirebaseError } from "firebase/app";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthContext } from "../hooks/useAuthContext";
 import { useNavigate } from "react-router-dom";
 
 interface SignUpFormProps {
@@ -28,7 +28,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuth();
+  const { signUp } = useAuthContext();
   const navigate = useNavigate();
 
   const validateForm = (): boolean => {
@@ -99,7 +99,7 @@ export function SignUpForm({ onSwitchToLogin }: SignUpFormProps) {
   return (
     <Box component="form" onSubmit={handleSubmit} className="w-full">
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" fontWeight={700} sx={{ mb: 0.5 }}>
+        <Typography variant="h5" sx={{ mb: 0.5, fontWeight: 700 }}>
           Criar conta
         </Typography>
         <Typography variant="body2" color="text.secondary">

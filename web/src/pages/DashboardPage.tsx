@@ -93,7 +93,7 @@ export default function DashboardPage() {
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={3}
-            justifyContent="space-between"
+            sx={{ justifyContent: "space-between" }}
           >
             <Box sx={{ maxWidth: 640 }}>
               <Chip
@@ -125,7 +125,8 @@ export default function DashboardPage() {
               spacing={1.5}
               sx={{
                 minWidth: { md: 260 },
-                alignSelf: { md: "center" },
+                alignItems: { xs: "stretch", md: "center" },
+                justifyContent: "center",
               }}
             >
               <Button
@@ -228,7 +229,7 @@ export default function DashboardPage() {
               backdropFilter: "blur(10px)",
             }}
           >
-            <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
+            <Typography variant="h5" sx={{ mb: 1, fontWeight: 700 }}>
               Ritmo da operação
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 3 }}>
@@ -286,7 +287,7 @@ export default function DashboardPage() {
                 "linear-gradient(180deg, rgba(34, 36, 47, 0.96) 0%, rgba(24, 25, 34, 0.98) 100%)",
             }}
           >
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+            <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
               Identidade da sessão
             </Typography>
             <Typography color="text.secondary" variant="body2" sx={{ mb: 2.5 }}>
@@ -298,7 +299,7 @@ export default function DashboardPage() {
                 <Typography variant="caption" color="text.secondary">
                   Usuário
                 </Typography>
-                <Typography variant="body1" fontWeight={600}>
+                <Typography variant="body1" sx={{ fontWeight: 600 }}>
                   {displayName || "Nome não definido"}
                 </Typography>
               </Box>

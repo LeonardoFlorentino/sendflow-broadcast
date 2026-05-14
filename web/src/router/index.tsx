@@ -4,6 +4,7 @@ import { PublicRoute } from "../components/PublicRoute";
 import MainLayout from "../layouts/MainLayout";
 import DashboardPage from "../pages/DashboardPage";
 import BroadcastsPage from "../pages/BroadcastsPage";
+import MessagesHistoryPage from "../pages/MessagesHistoryPage";
 import ContactsPage from "../pages/ContactsPage";
 import ConnectionsPage from "../pages/ConnectionsPage";
 import SettingsPage from "../pages/SettingsPage";
@@ -28,6 +29,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <DashboardPage /> },
       { path: "broadcasts", element: <BroadcastsPage /> },
+      { path: "broadcasts/history", element: <MessagesHistoryPage /> },
       { path: "contacts", element: <ContactsPage /> },
       { path: "connections", element: <ConnectionsPage /> },
       { path: "settings", element: <SettingsPage /> },

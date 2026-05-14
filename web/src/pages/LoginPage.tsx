@@ -73,7 +73,7 @@ export default function LoginPage() {
                 variant="filled"
                 sx={{ mb: 2, fontWeight: 700 }}
               />
-              <Typography variant="h4" fontWeight={700} sx={{ mb: 1 }}>
+              <Typography variant="h4" sx={{ mb: 1, fontWeight: 700 }}>
                 Mensagens em escala, sem atrito
               </Typography>
               <Typography color="text.secondary" sx={{ maxWidth: 380 }}>

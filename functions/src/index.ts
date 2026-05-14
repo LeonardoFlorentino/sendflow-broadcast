@@ -1,30 +1,46 @@
-/**
- * Import function triggers from their respective submodules:
- *
- * import {onCall} from "firebase-functions/v2/https";
- * import {onDocumentWritten} from "firebase-functions/v2/firestore";
- *
- * See a full list of supported triggers at https://firebase.google.com/docs/functions
- */
-
 import { setGlobalOptions } from "firebase-functions";
+import { onSchedule } from "firebase-functions/v2/scheduler";
+import { logger } from "firebase-functions/v2";
+import { initializeApp } from "firebase-admin/app";
+import { Timestamp, getFirestore } from "firebase-admin/firestore";
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
+setGlobalOptions({ maxInstances: 10, region: "southamerica-east1" });
 
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
+initializeApp();
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+const DISPATCH_BATCH_LIMIT = 400;
+
+export const dispatchScheduledMessages = onSchedule(
+  {
+    schedule: "every 1 minutes",
+    timeZone: "America/Sao_Paulo",
+  },
+  async () => {
+    const db = getFirestore();
+    const now = Timestamp.now();
+
+    const dueSnapshot = await db
+      .collection("messages")
+      .where("status", "==", "scheduled")
+      .where("scheduledAt", "<=", now)
+      .limit(DISPATCH_BATCH_LIMIT)
+      .get();
+
+    if (dueSnapshot.empty) {
+      return;
+    }
+
+    const batch = db.batch();
+    dueSnapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, {
+        status: "sent",
+        sentAt: now,
+      });
+    });
+
+    await batch.commit();
+    logger.info("Dispatched scheduled messages", {
+      count: dueSnapshot.size,
+    });
+  },
+);

@@ -42,9 +42,9 @@ export default function ConnectionsPage() {
   const [editingConnectionId, setEditingConnectionId] = useState<string | null>(
     null,
   );
-  const [deletingConnectionId, setDeletingConnectionId] = useState<string | null>(
-    null,
-  );
+  const [deletingConnectionId, setDeletingConnectionId] = useState<
+    string | null
+  >(null);
   const [connectionName, setConnectionName] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -57,16 +57,18 @@ export default function ConnectionsPage() {
   const editingConnection = useMemo(
     () =>
       editingConnectionId
-        ? connections.find((connection) => connection.id === editingConnectionId)
+        ? connections.find(
+            (connection) => connection.id === editingConnectionId,
+          )
         : null,
     [connections, editingConnectionId],
   );
   const deletingConnection = useMemo(
     () =>
       deletingConnectionId
-        ? connections.find(
+        ? (connections.find(
             (connection) => connection.id === deletingConnectionId,
-          ) ?? null
+          ) ?? null)
         : null,
     [connections, deletingConnectionId],
   );
@@ -190,7 +192,7 @@ export default function ConnectionsPage() {
           <Stack
             direction={{ xs: "column", md: "row" }}
             spacing={3}
-            justifyContent="space-between"
+            sx={{ justifyContent: "space-between" }}
           >
             <Box sx={{ maxWidth: 700 }}>
               <Chip
@@ -246,7 +248,11 @@ export default function ConnectionsPage() {
                 </Typography>
                 <Typography
                   variant="body2"
-                  sx={{ mt: 0.75, fontFamily: "monospace", wordBreak: "break-all" }}
+                  sx={{
+                    mt: 0.75,
+                    fontFamily: "monospace",
+                    wordBreak: "break-all",
+                  }}
                 >
                   {userId}
                 </Typography>
@@ -280,8 +286,16 @@ export default function ConnectionsPage() {
             {
               label: "Estado do listener",
               value: loading ? "Sync" : error ? "Erro" : "Live",
-              icon: loading ? <SyncRoundedIcon /> : error ? <ErrorOutlineRoundedIcon /> : <HubRoundedIcon />,
-              tint: error ? "rgba(248, 113, 113, 0.16)" : "rgba(192, 132, 252, 0.16)",
+              icon: loading ? (
+                <SyncRoundedIcon />
+              ) : error ? (
+                <ErrorOutlineRoundedIcon />
+              ) : (
+                <HubRoundedIcon />
+              ),
+              tint: error
+                ? "rgba(248, 113, 113, 0.16)"
+                : "rgba(192, 132, 252, 0.16)",
               color: error ? "#fca5a5" : "#d8b4fe",
             },
           ].map((metric) => (
@@ -314,7 +328,7 @@ export default function ConnectionsPage() {
                   <Typography variant="body2" color="text.secondary">
                     {metric.label}
                   </Typography>
-                  <Typography variant="h4" fontWeight={700} sx={{ mt: 0.5 }}>
+                  <Typography variant="h4" sx={{ mt: 0.5, fontWeight: 700 }}>
                     {metric.value}
                   </Typography>
                 </Box>
@@ -335,12 +349,11 @@ export default function ConnectionsPage() {
         >
           <Stack
             direction={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
             spacing={2}
-            sx={{ mb: 3 }}
+            sx={{ mb: 3, justifyContent: "space-between" }}
           >
             <Box>
-              <Typography variant="h5" fontWeight={700} sx={{ mb: 0.75 }}>
+              <Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700 }}>
                 Lista de conexoes
               </Typography>
               <Typography color="text.secondary" variant="body2">
@@ -372,7 +385,7 @@ export default function ConnectionsPage() {
           </Stack>
 
           {loading ? (
-            <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
+            <Stack spacing={2} sx={{ py: 6, alignItems: "center" }}>
               <CircularProgress />
               <Typography color="text.secondary">
                 Carregando conexoes em tempo real...
@@ -389,7 +402,11 @@ export default function ConnectionsPage() {
                 backgroundColor: "rgba(248, 113, 113, 0.06)",
               }}
             >
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ alignItems: "center" }}
+              >
                 <ErrorOutlineRoundedIcon sx={{ color: "#fca5a5" }} />
                 <Typography>{error}</Typography>
               </Stack>
@@ -406,7 +423,7 @@ export default function ConnectionsPage() {
                 textAlign: "center",
               }}
             >
-              <Typography variant="h6" fontWeight={700} sx={{ mb: 1 }}>
+              <Typography variant="h6" sx={{ mb: 1, fontWeight: 700 }}>
                 Nenhuma conexao encontrada
               </Typography>
               <Typography color="text.secondary">
@@ -429,13 +446,14 @@ export default function ConnectionsPage() {
                 >
                   <Stack
                     direction={{ xs: "column", md: "row" }}
-                    justifyContent="space-between"
                     spacing={1.5}
-                    sx={{ mb: 1 }}
+                    sx={{ mb: 1, justifyContent: "space-between" }}
                   >
                     <Box>
-                      <Typography variant="body1" fontWeight={700}>
-                        {connection.name || connection.phone || "Conexao sem nome"}
+                      <Typography variant="body1" sx={{ fontWeight: 700 }}>
+                        {connection.name ||
+                          connection.phone ||
+                          "Conexao sem nome"}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         ID: {connection.id}
@@ -444,8 +462,10 @@ export default function ConnectionsPage() {
                     <Stack
                       direction="row"
                       spacing={1}
-                      alignItems="center"
-                      sx={{ alignSelf: { xs: "flex-start", md: "center" } }}
+                      sx={{
+                        alignItems: "center",
+                        alignSelf: { xs: "flex-start", md: "center" },
+                      }}
                     >
                       <Chip
                         label={connection.status || "Sem status"}
@@ -500,7 +520,7 @@ export default function ConnectionsPage() {
         </Paper>
       </Stack>
 
-      <Modal open={modalOpen} onClose={handleCloseModal}>
+      <Modal open={modalOpen} onClose={() => handleCloseModal()}>
         <Box
           sx={{
             position: "absolute",
@@ -527,7 +547,7 @@ export default function ConnectionsPage() {
           >
             <Stack spacing={2.5}>
               <Box>
-                <Typography variant="h5" fontWeight={700} sx={{ mb: 0.75 }}>
+                <Typography variant="h5" sx={{ mb: 0.75, fontWeight: 700 }}>
                   {isEditing ? "Editar conexao" : "Nova conexao"}
                 </Typography>
                 <Typography color="text.secondary" variant="body2">
@@ -562,10 +582,14 @@ export default function ConnectionsPage() {
                 </Typography>
               )}
 
-              <Stack direction="row" spacing={1.5} justifyContent="flex-end">
+              <Stack
+                direction="row"
+                spacing={1.5}
+                sx={{ justifyContent: "flex-end" }}
+              >
                 <Button
                   variant="text"
-                  onClick={handleCloseModal}
+                  onClick={() => handleCloseModal()}
                   disabled={saving}
                   sx={{ fontWeight: 700 }}
                 >
@@ -575,7 +599,9 @@ export default function ConnectionsPage() {
                   type="submit"
                   variant="contained"
                   disabled={saving}
-                  startIcon={saving ? <CircularProgress size={18} /> : undefined}
+                  startIcon={
+                    saving ? <CircularProgress size={18} /> : undefined
+                  }
                   sx={{
                     borderRadius: 2.2,
                     fontWeight: 700,
@@ -593,16 +619,18 @@ export default function ConnectionsPage() {
       <Dialog
         open={Boolean(deletingConnectionId)}
         onClose={() => handleCloseDeleteDialog()}
-        PaperProps={{
-          elevation: 0,
-          sx: {
-            borderRadius: 4,
-            border: "1px solid",
-            borderColor: "divider",
-            backgroundColor: "rgba(20, 21, 30, 0.96)",
-            backdropFilter: "blur(16px)",
-            backgroundImage: "none",
-            minWidth: { xs: "calc(100% - 32px)", sm: 440 },
+        slotProps={{
+          paper: {
+            elevation: 0,
+            sx: {
+              borderRadius: 4,
+              border: "1px solid",
+              borderColor: "divider",
+              backgroundColor: "rgba(20, 21, 30, 0.96)",
+              backdropFilter: "blur(16px)",
+              backgroundImage: "none",
+              minWidth: { xs: "calc(100% - 32px)", sm: 440 },
+            },
           },
         }}
       >
@@ -637,7 +665,11 @@ export default function ConnectionsPage() {
             variant="contained"
             disabled={deleting}
             startIcon={
-              deleting ? <CircularProgress size={18} color="inherit" /> : <DeleteOutlineRoundedIcon />
+              deleting ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <DeleteOutlineRoundedIcon />
+              )
             }
             sx={{ borderRadius: 2.2, fontWeight: 700 }}
           >

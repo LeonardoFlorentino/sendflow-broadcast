@@ -8,10 +8,10 @@ export function FirebaseConfigAlert() {
     >
       <Container maxWidth="sm">
         <Alert severity="warning" sx={{ mb: 2 }}>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
+          <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
             Firebase não configurado
           </Typography>
-          <Typography variant="body2" paragraph>
+          <Typography variant="body2" sx={{ mb: 2 }}>
             Para usar a autenticação, você precisa configurar as variáveis de
             ambiente do Firebase.
           </Typography>

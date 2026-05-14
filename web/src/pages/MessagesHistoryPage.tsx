@@ -18,7 +18,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs, { type Dayjs } from "dayjs";
 import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
@@ -52,7 +53,21 @@ export default function MessagesHistoryPage() {
   const [editingMessage, setEditingMessage] =
     useState<MessageHistoryItem | null>(null);
   const [editContent, setEditContent] = useState("");
-  const [editScheduledAt, setEditScheduledAt] = useState<Dayjs | null>(null);
+  const [editScheduledDate, setEditScheduledDate] = useState<Dayjs | null>(
+    null,
+  );
+  const [editScheduledTime, setEditScheduledTime] = useState<Dayjs | null>(
+    null,
+  );
+
+  const editScheduledAt =
+    editScheduledDate && editScheduledTime
+      ? editScheduledDate
+          .hour(editScheduledTime.hour())
+          .minute(editScheduledTime.minute())
+          .second(0)
+          .millisecond(0)
+      : null;
   const [editContactIds, setEditContactIds] = useState<string[]>([]);
   const [editError, setEditError] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
@@ -70,9 +85,11 @@ export default function MessagesHistoryPage() {
   function handleOpenEdit(message: MessageHistoryItem) {
     setEditingMessage(message);
     setEditContent(message.content);
-    setEditScheduledAt(
-      message.scheduledAt ? dayjs(message.scheduledAt.toDate()) : dayjs(),
-    );
+    const initial = message.scheduledAt
+      ? dayjs(message.scheduledAt.toDate())
+      : dayjs();
+    setEditScheduledDate(initial);
+    setEditScheduledTime(initial);
     setEditContactIds(message.contactIds);
     setEditError("");
   }
@@ -81,7 +98,8 @@ export default function MessagesHistoryPage() {
     if (savingEdit && !force) return;
     setEditingMessage(null);
     setEditContent("");
-    setEditScheduledAt(null);
+    setEditScheduledDate(null);
+    setEditScheduledTime(null);
     setEditContactIds([]);
     setEditError("");
   }
@@ -542,21 +560,45 @@ export default function MessagesHistoryPage() {
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              <DateTimePicker
-                label="Data e horário do agendamento"
-                value={editScheduledAt}
-                onChange={(value) => setEditScheduledAt(value)}
-                disabled={savingEdit}
-                minDateTime={dayjs()}
-                ampm={false}
-                format="DD/MM/YYYY HH:mm"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    sx: { "& .MuiOutlinedInput-root": { borderRadius: 2.2 } },
-                  },
-                }}
-              />
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+              >
+                <DatePicker
+                  label="Data"
+                  value={editScheduledDate}
+                  onChange={(value) => setEditScheduledDate(value)}
+                  disabled={savingEdit}
+                  minDate={dayjs().startOf("day")}
+                  format="DD/MM/YYYY"
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
+                        "& .MuiPickersSectionList-root": { cursor: "text" },
+                      },
+                    },
+                  }}
+                />
+                <TimePicker
+                  label="Horário"
+                  value={editScheduledTime}
+                  onChange={(value) => setEditScheduledTime(value)}
+                  disabled={savingEdit}
+                  ampm={false}
+                  format="HH:mm"
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
+                        "& .MuiPickersSectionList-root": { cursor: "text" },
+                      },
+                    },
+                  }}
+                />
+              </Stack>
 
               <Box>
                 <Typography variant="body2" sx={{ mb: 1, fontWeight: 700 }}>

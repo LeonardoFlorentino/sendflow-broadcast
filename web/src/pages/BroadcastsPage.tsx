@@ -13,7 +13,8 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { TimePicker } from "@mui/x-date-pickers/TimePicker";
 import dayjs, { type Dayjs } from "dayjs";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import ScheduleRoundedIcon from "@mui/icons-material/ScheduleRounded";
@@ -33,12 +34,22 @@ export default function BroadcastsPage() {
   const { createMessage } = useMessages();
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [message, setMessage] = useState("");
-  const [scheduledAt, setScheduledAt] = useState<Dayjs | null>(null);
+  const [scheduledDate, setScheduledDate] = useState<Dayjs | null>(null);
+  const [scheduledTime, setScheduledTime] = useState<Dayjs | null>(null);
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const messageInputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const scheduledAtInputRef = useRef<HTMLInputElement>(null);
+
+  const scheduledAt = useMemo(() => {
+    if (!scheduledDate || !scheduledTime) return null;
+    return scheduledDate
+      .hour(scheduledTime.hour())
+      .minute(scheduledTime.minute())
+      .second(0)
+      .millisecond(0);
+  }, [scheduledDate, scheduledTime]);
 
   function focusComposer(field: "message" | "schedule") {
     const target =
@@ -134,7 +145,8 @@ export default function BroadcastsPage() {
           : "Mensagem salva para envio imediato",
       );
       setMessage("");
-      setScheduledAt(null);
+      setScheduledDate(null);
+      setScheduledTime(null);
       setSelectedContactIds([]);
     } catch (submitActionError) {
       console.error("Message save error:", submitActionError);
@@ -507,27 +519,56 @@ export default function BroadcastsPage() {
                 sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.2 } }}
               />
 
-              <DateTimePicker
-                label="Agendar para (opcional)"
-                value={scheduledAt}
-                onChange={(value) => {
-                  setScheduledAt(value);
-                  if (submitError) setSubmitError("");
-                  if (submitSuccess) setSubmitSuccess("");
-                }}
-                minDateTime={dayjs()}
-                ampm={false}
-                format="DD/MM/YYYY HH:mm"
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    helperText:
-                      "Deixe em branco para usar o botão Enviar Agora.",
-                    inputRef: scheduledAtInputRef,
-                    sx: { "& .MuiOutlinedInput-root": { borderRadius: 2.2 } },
-                  },
-                }}
-              />
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={1.5}
+              >
+                <DatePicker
+                  label="Data (opcional)"
+                  value={scheduledDate}
+                  onChange={(value) => {
+                    setScheduledDate(value);
+                    if (submitError) setSubmitError("");
+                    if (submitSuccess) setSubmitSuccess("");
+                  }}
+                  minDate={dayjs().startOf("day")}
+                  format="DD/MM/YYYY"
+                  inputRef={scheduledAtInputRef}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
+                        "& .MuiPickersSectionList-root": { cursor: "text" },
+                      },
+                    },
+                  }}
+                />
+                <TimePicker
+                  label="Horário"
+                  value={scheduledTime}
+                  onChange={(value) => {
+                    setScheduledTime(value);
+                    if (submitError) setSubmitError("");
+                    if (submitSuccess) setSubmitSuccess("");
+                  }}
+                  ampm={false}
+                  format="HH:mm"
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      sx: {
+                        "& .MuiPickersInputBase-root": { borderRadius: 2.2 },
+                        "& .MuiPickersSectionList-root": { cursor: "text" },
+                      },
+                    },
+                  }}
+                />
+              </Stack>
+              <Typography variant="caption" color="text.secondary">
+                Preencha data e horário para agendar. Deixe em branco para
+                usar o botão Enviar Agora.
+              </Typography>
 
               <Paper
                 elevation={0}
